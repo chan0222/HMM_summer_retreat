@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>2026 HMM 수련회 유형 테스트</title>
+<script src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.2/kakao.min.js"></script>
 <style>
   * { box-sizing: border-box; }
   body {
@@ -331,6 +332,55 @@
   .item-none span {
     font-size: 20px;
   }
+  .share-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-top: 14px;
+  }
+  .share-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 12px 4px;
+    border-radius: 14px;
+    border: 1.5px solid #f0d9b5;
+    background: #fff;
+    font-size: 12px;
+    font-weight: 600;
+    color: #5c4429;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .share-btn .share-icon {
+    font-size: 20px;
+  }
+  .share-btn.kakao {
+    background: #FEE500;
+    border-color: #FEE500;
+    color: #3C1E1E;
+  }
+  .toast {
+    position: fixed;
+    left: 50%;
+    bottom: 28px;
+    transform: translateX(-50%) translateY(20px);
+    background: rgba(40, 28, 14, 0.92);
+    color: #fff;
+    font-size: 13px;
+    padding: 10px 18px;
+    border-radius: 99px;
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.25s ease;
+    z-index: 50;
+    white-space: nowrap;
+  }
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
 </style>
 </head>
 <body>
@@ -413,6 +463,88 @@ let current = 0;
 const scores = {A:0,B:0,C:0,D:0};
 const answers = new Array(questions.length).fill(null);
 const root = document.getElementById('root');
+
+// ===== 공유 기능 =====
+// 카카오 디벨로퍼스(https://developers.kakao.com)에서 발급받은
+// JavaScript 키를 아래 따옴표 안에 넣으면 카카오톡 공유가 활성화됩니다.
+const KAKAO_JS_KEY = '1ebbdbe961d0a5dc1c6ea70c7700864c';
+
+if (window.Kakao && KAKAO_JS_KEY && !Kakao.isInitialized()) {
+  Kakao.init(KAKAO_JS_KEY);
+}
+
+function showToast(msg){
+  let t = document.getElementById('toast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'toast';
+    t.className = 'toast';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(window.__toastTimer);
+  window.__toastTimer = setTimeout(() => t.classList.remove('show'), 1800);
+}
+
+function copyShareLink(){
+  const url = location.href;
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(url).then(() => {
+      showToast('링크가 복사됐어요! 📋');
+    }).catch(() => {
+      window.prompt('아래 링크를 복사해주세요', url);
+    });
+  } else {
+    window.prompt('아래 링크를 복사해주세요', url);
+  }
+}
+
+function nativeShare(title, text){
+  if (navigator.share) {
+    navigator.share({ title, text, url: location.href }).catch(() => {});
+  } else {
+    copyShareLink();
+  }
+}
+
+function shareKakao(title, desc){
+  if (window.Kakao && Kakao.isInitialized()) {
+    Kakao.Share.sendDefault({
+      objectType: 'feed',
+      content: {
+        title: title,
+        description: desc,
+        imageUrl: location.origin + location.pathname.replace(/\/[^/]*$/, '') + '/assets/background/bg_campsite_day.png',
+        link: { mobileWebUrl: location.href, webUrl: location.href }
+      },
+      buttons: [{ title: '나도 해보기', link: { mobileWebUrl: location.href, webUrl: location.href } }]
+    });
+  } else {
+    showToast('카카오 공유 키가 설정되지 않아 링크를 복사할게요');
+    copyShareLink();
+  }
+}
+
+function shareRowHTML(){
+  return `
+    <div class="share-row">
+      <button class="share-btn kakao" id="share-kakao"><span class="share-icon">💬</span>카카오톡</button>
+      <button class="share-btn" id="share-link"><span class="share-icon">🔗</span>링크 복사</button>
+      <button class="share-btn" id="share-native"><span class="share-icon">📤</span>공유하기</button>
+    </div>
+  `;
+}
+
+function bindShareRow(title, desc){
+  const kakaoBtn = document.getElementById('share-kakao');
+  const linkBtn = document.getElementById('share-link');
+  const nativeBtn = document.getElementById('share-native');
+  if (kakaoBtn) kakaoBtn.onclick = () => shareKakao(title, desc);
+  if (linkBtn) linkBtn.onclick = () => copyShareLink();
+  if (nativeBtn) nativeBtn.onclick = () => nativeShare(title, desc);
+}
+// ===== 공유 기능 끝 =====
 
 const outfitCategories = [
   {key:'hair', label:'헤어', icon:'💇'},
@@ -507,7 +639,9 @@ function renderResult(){
     </div>
     <button class="start-btn" id="next-game">👕 코디 게임 하러 가기</button>
     <button class="retry-btn" id="retry">🔄 다시 테스트하기</button>
+    ${shareRowHTML()}
   `;
+  bindShareRow(`나는 "${r.name}"! 너는 무슨 유형이야?`, `2026 HMM 수련회 유형 테스트 해보고 결과 비교해보자 🌴`);
   document.getElementById('next-game').onclick = () => {
     screen = outfit.gender ? 'dressup' : 'dressup-gender';
     render();
@@ -622,7 +756,9 @@ function renderDressupComplete(){
     ${stageHTML()}
     <button class="start-btn" id="edit-again">👕 다시 코디하기</button>
     <button class="retry-btn" id="restart-all">🔄 처음부터 다시</button>
+    ${shareRowHTML()}
   `;
+  bindShareRow('내 HMM 수련회 코디 완성! 🎉', '너도 코디 게임 해볼래?');
   document.getElementById('edit-again').onclick = () => { screen = 'dressup'; render(); };
   document.getElementById('restart-all').onclick = () => {
     screen = 'intro';
