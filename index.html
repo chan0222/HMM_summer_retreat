@@ -201,6 +201,92 @@
     color: #c4a172;
     margin-top: 18px;
   }
+  .dressup-stage {
+    position: relative;
+    height: 200px;
+    background: #fff6e9;
+    border: 1.5px dashed #f0d9b5;
+    border-radius: 16px;
+    margin-bottom: 18px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+  }
+  .char-face {
+    font-size: 38px;
+    margin-bottom: 2px;
+  }
+  .char-slot {
+    font-size: 30px;
+    line-height: 1.1;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #d8c3a0;
+  }
+  .tabs {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+    margin-bottom: 14px;
+  }
+  .tab-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 8px 4px;
+    border-radius: 12px;
+    border: 1.5px solid #f0d9b5;
+    background: #fff;
+    font-size: 11.5px;
+    color: #9c7a4d;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .tab-btn span:first-child {
+    font-size: 18px;
+  }
+  .tab-active {
+    border-color: #ffb347;
+    background: #fff6e9;
+    color: #7a4a1f;
+    font-weight: 700;
+  }
+  .item-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-bottom: 18px;
+  }
+  .item-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px;
+    border-radius: 14px;
+    border: 1.5px solid #f0d9b5;
+    background: #fff;
+    font-size: 13px;
+    color: #5c4429;
+    cursor: pointer;
+    font-family: inherit;
+    text-align: left;
+  }
+  .item-emoji {
+    font-size: 22px;
+    flex-shrink: 0;
+  }
+  .item-selected {
+    border-color: #ffb347;
+    background: #fff6e9;
+  }
+  .item-selected .item-emoji {
+    transform: scale(1.1);
+  }
 </style>
 </head>
 <body>
@@ -278,11 +364,49 @@ const results = {
       tag:"찬양팀 추천"}
 };
 
-let started = false;
+let screen = 'intro';
 let current = 0;
 const scores = {A:0,B:0,C:0,D:0};
 const answers = new Array(questions.length).fill(null);
 const root = document.getElementById('root');
+
+const outfitCategories = [
+  {key:'top', label:'상의', icon:'👕'},
+  {key:'bottom', label:'하의', icon:'👖'},
+  {key:'shoes', label:'신발', icon:'👟'},
+  {key:'accessory', label:'소품', icon:'🎒'}
+];
+
+const outfitItems = {
+  top: [
+    {name:'화이트 티셔츠', emoji:'👕'},
+    {name:'후드 집업', emoji:'🧥'},
+    {name:'체크 셔츠', emoji:'👔'},
+    {name:'니트', emoji:'🦺'}
+  ],
+  bottom: [
+    {name:'청바지', emoji:'👖'},
+    {name:'반바지', emoji:'🩳'},
+    {name:'카고팬츠', emoji:'👖'},
+    {name:'트레이닝팬츠', emoji:'🩳'}
+  ],
+  shoes: [
+    {name:'운동화', emoji:'👟'},
+    {name:'슬리퍼', emoji:'🩴'},
+    {name:'워커', emoji:'🥾'},
+    {name:'샌들', emoji:'👡'}
+  ],
+  accessory: [
+    {name:'모자', emoji:'🧢'},
+    {name:'선글라스', emoji:'🕶️'},
+    {name:'백팩', emoji:'🎒'},
+    {name:'목걸이', emoji:'📿'}
+  ]
+};
+
+let outfit = {top:null, bottom:null, shoes:null, accessory:null};
+let activeCategory = 'top';
+let resultType = 'A';
 
 function renderIntro(){
   root.innerHTML = `
@@ -293,15 +417,16 @@ function renderIntro(){
     <p class="footer-note">소요시간 약 1분</p>
   `;
   document.getElementById('start').onclick = () => {
-    started = true;
+    screen = 'quiz';
     render();
   };
 }
 
 function render(){
-  if (!started) { renderIntro(); return; }
-  if (current < questions.length) renderQuestion();
-  else renderResult();
+  if (screen === 'intro') { renderIntro(); return; }
+  if (screen === 'quiz') { renderQuestion(); return; }
+  if (screen === 'result') { renderResult(); return; }
+  if (screen === 'dressup') { renderDressup(); return; }
 }
 
 function renderQuestion(){
@@ -328,6 +453,7 @@ function renderQuestion(){
       scores[o.type]++;
       answers[current] = o.type;
       current++;
+      if (current >= questions.length) screen = 'result';
       render();
     };
     wrap.appendChild(btn);
@@ -343,6 +469,7 @@ function renderQuestion(){
 function renderResult(){
   let top = 'A';
   Object.keys(scores).forEach(k => { if (scores[k] > scores[top]) top = k; });
+  resultType = top;
   const r = results[top];
   root.innerHTML = `
     <div class="result-box" style="background:${r.color}">
@@ -352,13 +479,107 @@ function renderResult(){
       <p class="result-desc">${r.desc}</p>
       <span class="result-tag">${r.tag}</span>
     </div>
+    <button class="start-btn" id="next-game">👕 코디 게임 하러 가기</button>
     <button class="retry-btn" id="retry">🔄 다시 테스트하기</button>
   `;
+  document.getElementById('next-game').onclick = () => {
+    screen = 'dressup';
+    render();
+  };
   document.getElementById('retry').onclick = () => {
-    started = false;
+    screen = 'intro';
     current = 0;
     Object.keys(scores).forEach(k => scores[k] = 0);
     answers.fill(null);
+    render();
+  };
+}
+
+function renderDressup(){
+  const r = results[resultType];
+  root.innerHTML = `
+    <div class="top-emoji">👗</div>
+    <h1>나만의 수련회 코디 완성하기</h1>
+    <p class="sub">상의·하의·신발·소품을 골라 코디를 완성해보세요</p>
+
+    <div class="dressup-stage">
+      <div class="char-face">😊</div>
+      <div class="char-slot" id="slot-accessory">${outfit.accessory ? outfit.accessory.emoji : ''}</div>
+      <div class="char-slot" id="slot-top">${outfit.top ? outfit.top.emoji : '➖'}</div>
+      <div class="char-slot" id="slot-bottom">${outfit.bottom ? outfit.bottom.emoji : '➖'}</div>
+      <div class="char-slot" id="slot-shoes">${outfit.shoes ? outfit.shoes.emoji : '➖'}</div>
+    </div>
+
+    <div class="tabs" id="tabs"></div>
+    <div class="item-grid" id="items"></div>
+
+    <button class="start-btn" id="complete-btn">코디 완성! 🎉</button>
+    <button class="back-btn" id="back-to-result">← 결과 화면으로</button>
+  `;
+
+  const tabsWrap = root.querySelector('#tabs');
+  outfitCategories.forEach(cat => {
+    const tb = document.createElement('button');
+    tb.className = 'tab-btn' + (activeCategory === cat.key ? ' tab-active' : '');
+    tb.innerHTML = `<span>${cat.icon}</span><span>${cat.label}</span>`;
+    tb.onclick = () => {
+      activeCategory = cat.key;
+      renderDressup();
+    };
+    tabsWrap.appendChild(tb);
+  });
+
+  const itemsWrap = root.querySelector('#items');
+  outfitItems[activeCategory].forEach(item => {
+    const ib = document.createElement('button');
+    const selected = outfit[activeCategory] && outfit[activeCategory].name === item.name;
+    ib.className = 'item-btn' + (selected ? ' item-selected' : '');
+    ib.innerHTML = `<span class="item-emoji">${item.emoji}</span><span class="item-name">${item.name}</span>`;
+    ib.onclick = () => {
+      outfit[activeCategory] = selected ? null : item;
+      renderDressup();
+    };
+    itemsWrap.appendChild(ib);
+  });
+
+  document.getElementById('back-to-result').onclick = () => {
+    screen = 'result';
+    render();
+  };
+
+  document.getElementById('complete-btn').onclick = () => {
+    renderDressupComplete();
+  };
+}
+
+function renderDressupComplete(){
+  const filled = Object.values(outfit).filter(Boolean).length;
+  root.innerHTML = `
+    <div class="result-box" style="background:linear-gradient(135deg, #ffb6c1, #ff8fab)">
+      <div class="dressup-stage" style="background:rgba(255,255,255,0.15); margin-bottom:14px;">
+        <div class="char-face">😊</div>
+        <div class="char-slot">${outfit.accessory ? outfit.accessory.emoji : ''}</div>
+        <div class="char-slot">${outfit.top ? outfit.top.emoji : ''}</div>
+        <div class="char-slot">${outfit.bottom ? outfit.bottom.emoji : ''}</div>
+        <div class="char-slot">${outfit.shoes ? outfit.shoes.emoji : ''}</div>
+      </div>
+      <p class="result-label">코디 완성!</p>
+      <p class="result-name" style="font-size:18px;">${filled} / 4 아이템 착용</p>
+      <p class="result-desc">${filled === 4 ? '완벽한 수련회 룩이에요! 이대로 출발해도 좋겠어요.' : '몇 가지를 더 골라서 코디를 완성해보세요.'}</p>
+    </div>
+    <button class="start-btn" id="edit-again">👕 다시 코디하기</button>
+    <button class="retry-btn" id="restart-all">🔄 처음부터 다시</button>
+  `;
+  document.getElementById('edit-again').onclick = () => {
+    screen = 'dressup';
+    render();
+  };
+  document.getElementById('restart-all').onclick = () => {
+    screen = 'intro';
+    current = 0;
+    Object.keys(scores).forEach(k => scores[k] = 0);
+    answers.fill(null);
+    outfit = {top:null, bottom:null, shoes:null, accessory:null};
     render();
   };
 }
