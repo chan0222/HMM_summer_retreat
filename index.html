@@ -546,6 +546,119 @@ function bindShareRow(title, desc){
 }
 // ===== 공유 기능 끝 =====
 
+// ===== 코디 합성 이미지 생성 =====
+function loadImg(src){
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = src;
+  });
+}
+
+async function buildCompositeImage(){
+  const W = 800, H = 1000;
+  const canvas = document.createElement('canvas');
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+
+  ctx.fillStyle = '#fff6e9';
+  ctx.fillRect(0, 0, W, H);
+
+  if (outfit.background) {
+    const bg = await loadImg(`${ASSET}/${outfit.background.file}`);
+    const scale = Math.max(W / bg.width, H / bg.height);
+    const w = bg.width * scale, h = bg.height * scale;
+    ctx.drawImage(bg, (W - w) / 2, (H - h) / 2, w, h);
+  }
+
+  const bodyFile = outfit.gender === 'girl' ? 'body/body_girl.png' : 'body/body_boy.png';
+  const body = await loadImg(`${ASSET}/${bodyFile}`);
+  const bodyH = H * 0.6;
+  const scale = bodyH / body.height;
+  const bodyW = body.width * scale;
+  const bodyX = W / 2 - bodyW / 2;
+  const bodyY = H - bodyH - H * 0.1;
+
+  async function drawLayer(item, offsetYRatio, itemScale, alignRight){
+    if (!item) return;
+    const img = await loadImg(`${ASSET}/${item.file}`);
+    const w = img.width * scale * itemScale;
+    const h = img.height * scale * itemScale;
+    const x = alignRight ? (bodyX + bodyW - w - 6) : (W / 2 - w / 2);
+    const y = bodyY + bodyH * offsetYRatio;
+    ctx.drawImage(img, x, y, w, h);
+  }
+
+  ctx.drawImage(body, bodyX, bodyY, bodyW, bodyH);
+  await drawLayer(outfit.bottom, 0.5, 1, false);
+  await drawLayer(outfit.shoes, 0.84, 0.9, false);
+  await drawLayer(outfit.top, 0.24, 1, false);
+  await drawLayer(outfit.hair, 0.0, 1, false);
+  await drawLayer(outfit.accessory, 0.78, 0.55, true);
+
+  const r = results[resultType];
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#7a4a1f';
+  ctx.font = 'bold 34px "Apple SD Gothic Neo", "Noto Sans KR", sans-serif';
+  ctx.fillText('2026 HMM 수련회', W / 2, 64);
+  ctx.font = 'bold 26px "Apple SD Gothic Neo", "Noto Sans KR", sans-serif';
+  ctx.fillStyle = '#ff7a3d';
+  ctx.fillText(`${r.name} 코디 완성! 🎉`, W / 2, 102);
+
+  return canvas;
+}
+
+function downloadBlob(blob, filename){
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+async function saveCompositeImage(){
+  showToast('이미지를 만들고 있어요...');
+  try {
+    const canvas = await buildCompositeImage();
+    canvas.toBlob((blob) => {
+      downloadBlob(blob, 'hmm_coordi.png');
+      showToast('이미지가 저장됐어요! 📷');
+    }, 'image/png');
+  } catch (e) {
+    showToast('이미지 생성에 실패했어요 😢');
+  }
+}
+
+async function shareCompositeImage(){
+  showToast('이미지를 만들고 있어요...');
+  try {
+    const canvas = await buildCompositeImage();
+    canvas.toBlob(async (blob) => {
+      const file = new File([blob], 'hmm_coordi.png', { type: 'image/png' });
+      const r = results[resultType];
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({
+            files: [file],
+            title: 'HMM 수련회 코디 완성!',
+            text: `나는 "${r.name}"! 코디까지 완성했어 🎉 너도 해봐 → ${location.href}`
+          });
+        } catch (e) { /* 사용자가 취소함 */ }
+      } else {
+        downloadBlob(blob, 'hmm_coordi.png');
+        showToast('이미지가 저장됐어요! 카톡방에 직접 첨부해주세요 💛');
+      }
+    }, 'image/png');
+  } catch (e) {
+    showToast('이미지 생성에 실패했어요 😢');
+  }
+}
+// ===== 코디 합성 이미지 생성 끝 =====
+
 const outfitCategories = [
   {key:'hair', label:'헤어', icon:'💇'},
   {key:'top', label:'상의', icon:'👕'},
@@ -639,9 +752,7 @@ function renderResult(){
     </div>
     <button class="start-btn" id="next-game">👕 코디 게임 하러 가기</button>
     <button class="retry-btn" id="retry">🔄 다시 테스트하기</button>
-    ${shareRowHTML()}
   `;
-  bindShareRow(`나는 "${r.name}"! 너는 무슨 유형이야?`, `2026 HMM 수련회 유형 테스트 해보고 결과 비교해보자 🌴`);
   document.getElementById('next-game').onclick = () => {
     screen = outfit.gender ? 'dressup' : 'dressup-gender';
     render();
@@ -754,11 +865,16 @@ function renderDressupComplete(){
     <h1>코디 완성!</h1>
     <p class="sub">${filled} / ${keys.length} 항목 완성</p>
     ${stageHTML()}
-    <button class="start-btn" id="edit-again">👕 다시 코디하기</button>
-    <button class="retry-btn" id="restart-all">🔄 처음부터 다시</button>
+    <button class="start-btn" id="share-image-btn">📷 코디 이미지로 공유하기</button>
+    <button class="retry-btn" id="save-image-btn">💾 이미지 저장</button>
+    <button class="back-btn" id="edit-again">👕 다시 코디하기</button>
+    <p class="footer-note" style="margin-top:14px;">또는 링크로 공유하기</p>
     ${shareRowHTML()}
+    <button class="back-btn" id="restart-all">🔄 처음부터 다시</button>
   `;
   bindShareRow('내 HMM 수련회 코디 완성! 🎉', '너도 코디 게임 해볼래?');
+  document.getElementById('share-image-btn').onclick = () => shareCompositeImage();
+  document.getElementById('save-image-btn').onclick = () => saveCompositeImage();
   document.getElementById('edit-again').onclick = () => { screen = 'dressup'; render(); };
   document.getElementById('restart-all').onclick = () => {
     screen = 'intro';
