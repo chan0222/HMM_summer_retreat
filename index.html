@@ -203,33 +203,69 @@
   }
   .dressup-stage {
     position: relative;
-    height: 200px;
+    height: 320px;
     background: #fff6e9;
     border: 1.5px dashed #f0d9b5;
     border-radius: 16px;
-    margin-bottom: 18px;
+    margin-bottom: 16px;
+    overflow: hidden;
+  }
+  .stage-bg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .stage-layer {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    pointer-events: none;
+  }
+  .stage-placeholder {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #c4a172;
+    font-size: 13px;
+  }
+  .gender-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+  .gender-btn {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    gap: 2px;
+    gap: 8px;
+    padding: 16px 10px;
+    border-radius: 16px;
+    border: 1.5px solid #f0d9b5;
+    background: #fff;
+    cursor: pointer;
+    font-family: inherit;
   }
-  .char-face {
-    font-size: 38px;
-    margin-bottom: 2px;
+  .gender-btn img {
+    width: 90px;
+    height: auto;
   }
-  .char-slot {
-    font-size: 30px;
-    line-height: 1.1;
-    height: 36px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #d8c3a0;
+  .gender-btn span {
+    font-size: 14px;
+    font-weight: 700;
+    color: #5c4429;
+  }
+  .gender-btn:hover {
+    border-color: #ffb347;
+    background: #fff6e9;
   }
   .tabs {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: 6px;
     margin-bottom: 14px;
   }
@@ -248,7 +284,7 @@
     font-family: inherit;
   }
   .tab-btn span:first-child {
-    font-size: 18px;
+    font-size: 17px;
   }
   .tab-active {
     border-color: #ffb347;
@@ -258,34 +294,42 @@
   }
   .item-grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
     margin-bottom: 18px;
   }
   .item-btn {
     display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: 10px;
-    padding: 12px;
+    gap: 4px;
+    padding: 8px 4px 6px;
     border-radius: 14px;
     border: 1.5px solid #f0d9b5;
     background: #fff;
-    font-size: 13px;
-    color: #5c4429;
     cursor: pointer;
     font-family: inherit;
-    text-align: left;
+    text-align: center;
   }
-  .item-emoji {
-    font-size: 22px;
-    flex-shrink: 0;
+  .item-btn img {
+    width: 100%;
+    height: 56px;
+    object-fit: contain;
+  }
+  .item-btn span {
+    font-size: 11px;
+    color: #5c4429;
+    line-height: 1.3;
   }
   .item-selected {
     border-color: #ffb347;
     background: #fff6e9;
   }
-  .item-selected .item-emoji {
-    transform: scale(1.1);
+  .item-none {
+    justify-content: center;
+  }
+  .item-none span {
+    font-size: 20px;
   }
 </style>
 </head>
@@ -371,42 +415,224 @@ const answers = new Array(questions.length).fill(null);
 const root = document.getElementById('root');
 
 const outfitCategories = [
+  {key:'hair', label:'헤어', icon:'💇'},
   {key:'top', label:'상의', icon:'👕'},
   {key:'bottom', label:'하의', icon:'👖'},
   {key:'shoes', label:'신발', icon:'👟'},
-  {key:'accessory', label:'소품', icon:'🎒'}
+  {key:'accessory', label:'소품', icon:'🎒'},
+  {key:'background', label:'배경', icon:'🏕️'}
 ];
 
-const outfitItems = {
-  top: [
-    {name:'화이트 티셔츠', emoji:'👕'},
-    {name:'후드 집업', emoji:'🧥'},
-    {name:'체크 셔츠', emoji:'👔'},
-    {name:'니트', emoji:'🦺'}
+const ASSET = 'assets';
+
+const hairItems = {
+  boy: [
+    {name:'댄디컷', file:'hair/hair_m_dandy.png'},
+    {name:'심플머리', file:'hair/hair_m_simpyo.png'},
+    {name:'가르마', file:'hair/hair_m_garma.png'},
+    {name:'투블럭', file:'hair/hair_m_2block.png'},
+    {name:'볼륨펌', file:'hair/hair_m_volume.png'}
   ],
-  bottom: [
-    {name:'청바지', emoji:'👖'},
-    {name:'반바지', emoji:'🩳'},
-    {name:'카고팬츠', emoji:'👖'},
-    {name:'트레이닝팬츠', emoji:'🩳'}
-  ],
-  shoes: [
-    {name:'운동화', emoji:'👟'},
-    {name:'슬리퍼', emoji:'🩴'},
-    {name:'워커', emoji:'🥾'},
-    {name:'샌들', emoji:'👡'}
-  ],
-  accessory: [
-    {name:'모자', emoji:'🧢'},
-    {name:'선글라스', emoji:'🕶️'},
-    {name:'백팩', emoji:'🎒'},
-    {name:'목걸이', emoji:'📿'}
+  girl: [
+    {name:'긴 생머리', file:'hair/hair_f_long.png'},
+    {name:'단발', file:'hair/hair_f_bob.png'},
+    {name:'웨이브', file:'hair/hair_f_wave.png'},
+    {name:'포니테일', file:'hair/hair_f_pony.png'},
+    {name:'반묶음', file:'hair/hair_f_half.png'}
   ]
 };
 
-let outfit = {top:null, bottom:null, shoes:null, accessory:null};
-let activeCategory = 'top';
+const outfitItems = {
+  top: [
+    {name:'수련회 티셔츠', file:'tops/top_tshirt_white.png'},
+    {name:'수련회 메인티', file:'tops/top_tshirt_navy.png'},
+    {name:'후드티', file:'tops/top_hoodie.png'},
+    {name:'체크셔츠', file:'tops/top_check_shirt.png'},
+    {name:'조끼', file:'tops/top_vest.png'},
+    {name:'맨투맨', file:'tops/top_sweatshirt.png'},
+    {name:'카라티', file:'tops/top_collar.png'},
+    {name:'반팔셔츠', file:'tops/top_shortsleeve.png'}
+  ],
+  bottom: [
+    {name:'청바지', file:'pants/pants_jeans.png'},
+    {name:'반바지', file:'pants/pants_shorts.png'},
+    {name:'카고팬츠', file:'pants/pants_cargo.png'},
+    {name:'트레이닝팬츠', file:'pants/pants_training.png'},
+    {name:'슬랙스', file:'pants/pants_slacks.png'}
+  ],
+  shoes: [
+    {name:'운동화', file:'shoes/shoes_sneakers.png'},
+    {name:'샌들', file:'shoes/shoes_sandals.png'},
+    {name:'슬리퍼', file:'shoes/shoes_slipper.png'},
+    {name:'하이탑', file:'shoes/shoes_hightop.png'}
+  ],
+  accessory: [
+    {name:'성경책', file:'accessory/acc_bible.png'},
+    {name:'기타', file:'accessory/acc_guitar.png'},
+    {name:'마이크', file:'accessory/acc_mic.png'},
+    {name:'카메라', file:'accessory/acc_camera.png'},
+    {name:'백팩', file:'accessory/acc_backpack.png'},
+    {name:'십자가 목걸이', file:'accessory/acc_cross_necklace.png'},
+    {name:'캠프 모자', file:'accessory/acc_camp_hat.png'},
+    {name:'텀블러', file:'accessory/acc_tumbler.png'},
+    {name:'꽃 화관', file:'accessory/acc_flower_crown.png'},
+    {name:'응원봉', file:'accessory/acc_lightstick.png'}
+  ],
+  background: [
+    {name:'캠프장 낮', file:'background/bg_campsite_day.png'},
+    {name:'캠프장 밤', file:'background/bg_campsite_night.png'},
+    {name:'교회 내부', file:'background/bg_church.png'},
+    {name:'바닷가', file:'background/bg_beach.png'},
+    {name:'산과 호수', file:'background/bg_mountain_lake.png'},
+    {name:'잔디밭', file:'background/bg_grassfield.png'}
+  ]
+};
+
+let outfit = {gender:null, hair:null, top:null, bottom:null, shoes:null, accessory:null, background:null};
+let activeCategory = 'hair';
 let resultType = 'A';
+
+function renderResult(){
+  let top = 'A';
+  Object.keys(scores).forEach(k => { if (scores[k] > scores[top]) top = k; });
+  resultType = top;
+  const r = results[top];
+  root.innerHTML = `
+    <div class="result-box" style="background:${r.color}">
+      <div class="result-emoji">${r.emoji}</div>
+      <p class="result-label">당신의 수련회 유형은</p>
+      <p class="result-name">${r.name}</p>
+      <p class="result-desc">${r.desc}</p>
+      <span class="result-tag">${r.tag}</span>
+    </div>
+    <button class="start-btn" id="next-game">👕 코디 게임 하러 가기</button>
+    <button class="retry-btn" id="retry">🔄 다시 테스트하기</button>
+  `;
+  document.getElementById('next-game').onclick = () => {
+    screen = outfit.gender ? 'dressup' : 'dressup-gender';
+    render();
+  };
+  document.getElementById('retry').onclick = () => {
+    screen = 'intro';
+    current = 0;
+    Object.keys(scores).forEach(k => scores[k] = 0);
+    answers.fill(null);
+    render();
+  };
+}
+
+function renderGenderSelect(){
+  root.innerHTML = `
+    <div class="top-emoji">👗</div>
+    <h1>캐릭터를 선택해주세요</h1>
+    <p class="sub">코디할 캐릭터를 골라주세요</p>
+    <div class="gender-grid">
+      <button class="gender-btn" id="pick-boy">
+        <img src="${ASSET}/body/body_boy.png" alt="남자 캐릭터" />
+        <span>남자</span>
+      </button>
+      <button class="gender-btn" id="pick-girl">
+        <img src="${ASSET}/body/body_girl.png" alt="여자 캐릭터" />
+        <span>여자</span>
+      </button>
+    </div>
+  `;
+  document.getElementById('pick-boy').onclick = () => {
+    outfit.gender = 'boy';
+    screen = 'dressup';
+    render();
+  };
+  document.getElementById('pick-girl').onclick = () => {
+    outfit.gender = 'girl';
+    screen = 'dressup';
+    render();
+  };
+}
+
+function stageHTML(){
+  const bodyFile = outfit.gender === 'girl' ? 'body/body_girl.png' : 'body/body_boy.png';
+  const hairList = outfit.gender === 'girl' ? hairItems.girl : hairItems.boy;
+  const bgFile = outfit.background ? `${ASSET}/${outfit.background.file}` : null;
+  return `
+    <div class="dressup-stage">
+      ${bgFile ? `<img class="stage-bg" src="${bgFile}" alt="배경" />` : ''}
+      <img class="stage-layer" src="${ASSET}/${bodyFile}" alt="캐릭터" style="bottom:8px; width:160px; z-index:2;" />
+      ${outfit.bottom ? `<img class="stage-layer" src="${ASSET}/${outfit.bottom.file}" alt="${outfit.bottom.name}" style="bottom:18px; width:100px; z-index:3;" />` : ''}
+      ${outfit.shoes ? `<img class="stage-layer" src="${ASSET}/${outfit.shoes.file}" alt="${outfit.shoes.name}" style="bottom:6px; width:70px; z-index:4;" />` : ''}
+      ${outfit.top ? `<img class="stage-layer" src="${ASSET}/${outfit.top.file}" alt="${outfit.top.name}" style="bottom:90px; width:110px; z-index:5;" />` : ''}
+      ${outfit.hair ? `<img class="stage-layer" src="${ASSET}/${outfit.hair.file}" alt="${outfit.hair.name}" style="top:6px; width:110px; z-index:6;" />` : ''}
+      ${outfit.accessory ? `<img class="stage-layer" src="${ASSET}/${outfit.accessory.file}" alt="${outfit.accessory.name}" style="bottom:10px; right:10px; left:auto; transform:none; width:56px; z-index:7;" />` : ''}
+    </div>
+  `;
+}
+
+function getActiveList(){
+  if (activeCategory === 'hair') return outfit.gender === 'girl' ? hairItems.girl : hairItems.boy;
+  return outfitItems[activeCategory];
+}
+
+function renderDressup(){
+  root.innerHTML = `
+    <div class="top-emoji">👗</div>
+    <h1>나만의 수련회 코디 완성하기</h1>
+    <p class="sub">헤어·상의·하의·신발·소품·배경을 골라보세요</p>
+    ${stageHTML()}
+    <div class="tabs" id="tabs"></div>
+    <div class="item-grid" id="items"></div>
+    <button class="start-btn" id="complete-btn">코디 완성! 🎉</button>
+    <button class="back-btn" id="back-to-result">← 결과 화면으로</button>
+  `;
+
+  const tabsWrap = root.querySelector('#tabs');
+  outfitCategories.forEach(cat => {
+    const tb = document.createElement('button');
+    tb.className = 'tab-btn' + (activeCategory === cat.key ? ' tab-active' : '');
+    tb.innerHTML = `<span>${cat.icon}</span><span>${cat.label}</span>`;
+    tb.onclick = () => { activeCategory = cat.key; renderDressup(); };
+    tabsWrap.appendChild(tb);
+  });
+
+  const itemsWrap = root.querySelector('#items');
+  const noneBtn = document.createElement('button');
+  noneBtn.className = 'item-btn item-none' + (!outfit[activeCategory] ? ' item-selected' : '');
+  noneBtn.innerHTML = `<span>➖</span><span>선택 안함</span>`;
+  noneBtn.onclick = () => { outfit[activeCategory] = null; renderDressup(); };
+  itemsWrap.appendChild(noneBtn);
+
+  getActiveList().forEach(item => {
+    const selected = outfit[activeCategory] && outfit[activeCategory].name === item.name;
+    const ib = document.createElement('button');
+    ib.className = 'item-btn' + (selected ? ' item-selected' : '');
+    ib.innerHTML = `<img src="${ASSET}/${item.file}" alt="${item.name}" /><span>${item.name}</span>`;
+    ib.onclick = () => { outfit[activeCategory] = item; renderDressup(); };
+    itemsWrap.appendChild(ib);
+  });
+
+  document.getElementById('back-to-result').onclick = () => { screen = 'result'; render(); };
+  document.getElementById('complete-btn').onclick = () => { renderDressupComplete(); };
+}
+
+function renderDressupComplete(){
+  const keys = ['hair','top','bottom','shoes','accessory','background'];
+  const filled = keys.filter(k => outfit[k]).length;
+  root.innerHTML = `
+    <div class="top-emoji">🎉</div>
+    <h1>코디 완성!</h1>
+    <p class="sub">${filled} / ${keys.length} 항목 완성</p>
+    ${stageHTML()}
+    <button class="start-btn" id="edit-again">👕 다시 코디하기</button>
+    <button class="retry-btn" id="restart-all">🔄 처음부터 다시</button>
+  `;
+  document.getElementById('edit-again').onclick = () => { screen = 'dressup'; render(); };
+  document.getElementById('restart-all').onclick = () => {
+    screen = 'intro';
+    current = 0;
+    Object.keys(scores).forEach(k => scores[k] = 0);
+    answers.fill(null);
+    outfit = {gender:null, hair:null, top:null, bottom:null, shoes:null, accessory:null, background:null};
+    render();
+  };
+}
 
 function renderIntro(){
   root.innerHTML = `
@@ -426,6 +652,7 @@ function render(){
   if (screen === 'intro') { renderIntro(); return; }
   if (screen === 'quiz') { renderQuestion(); return; }
   if (screen === 'result') { renderResult(); return; }
+  if (screen === 'dressup-gender') { renderGenderSelect(); return; }
   if (screen === 'dressup') { renderDressup(); return; }
 }
 
@@ -464,124 +691,6 @@ function renderQuestion(){
       render();
     };
   }
-}
-
-function renderResult(){
-  let top = 'A';
-  Object.keys(scores).forEach(k => { if (scores[k] > scores[top]) top = k; });
-  resultType = top;
-  const r = results[top];
-  root.innerHTML = `
-    <div class="result-box" style="background:${r.color}">
-      <div class="result-emoji">${r.emoji}</div>
-      <p class="result-label">당신의 수련회 유형은</p>
-      <p class="result-name">${r.name}</p>
-      <p class="result-desc">${r.desc}</p>
-      <span class="result-tag">${r.tag}</span>
-    </div>
-    <button class="start-btn" id="next-game">👕 코디 게임 하러 가기</button>
-    <button class="retry-btn" id="retry">🔄 다시 테스트하기</button>
-  `;
-  document.getElementById('next-game').onclick = () => {
-    screen = 'dressup';
-    render();
-  };
-  document.getElementById('retry').onclick = () => {
-    screen = 'intro';
-    current = 0;
-    Object.keys(scores).forEach(k => scores[k] = 0);
-    answers.fill(null);
-    render();
-  };
-}
-
-function renderDressup(){
-  const r = results[resultType];
-  root.innerHTML = `
-    <div class="top-emoji">👗</div>
-    <h1>나만의 수련회 코디 완성하기</h1>
-    <p class="sub">상의·하의·신발·소품을 골라 코디를 완성해보세요</p>
-
-    <div class="dressup-stage">
-      <div class="char-face">😊</div>
-      <div class="char-slot" id="slot-accessory">${outfit.accessory ? outfit.accessory.emoji : ''}</div>
-      <div class="char-slot" id="slot-top">${outfit.top ? outfit.top.emoji : '➖'}</div>
-      <div class="char-slot" id="slot-bottom">${outfit.bottom ? outfit.bottom.emoji : '➖'}</div>
-      <div class="char-slot" id="slot-shoes">${outfit.shoes ? outfit.shoes.emoji : '➖'}</div>
-    </div>
-
-    <div class="tabs" id="tabs"></div>
-    <div class="item-grid" id="items"></div>
-
-    <button class="start-btn" id="complete-btn">코디 완성! 🎉</button>
-    <button class="back-btn" id="back-to-result">← 결과 화면으로</button>
-  `;
-
-  const tabsWrap = root.querySelector('#tabs');
-  outfitCategories.forEach(cat => {
-    const tb = document.createElement('button');
-    tb.className = 'tab-btn' + (activeCategory === cat.key ? ' tab-active' : '');
-    tb.innerHTML = `<span>${cat.icon}</span><span>${cat.label}</span>`;
-    tb.onclick = () => {
-      activeCategory = cat.key;
-      renderDressup();
-    };
-    tabsWrap.appendChild(tb);
-  });
-
-  const itemsWrap = root.querySelector('#items');
-  outfitItems[activeCategory].forEach(item => {
-    const ib = document.createElement('button');
-    const selected = outfit[activeCategory] && outfit[activeCategory].name === item.name;
-    ib.className = 'item-btn' + (selected ? ' item-selected' : '');
-    ib.innerHTML = `<span class="item-emoji">${item.emoji}</span><span class="item-name">${item.name}</span>`;
-    ib.onclick = () => {
-      outfit[activeCategory] = selected ? null : item;
-      renderDressup();
-    };
-    itemsWrap.appendChild(ib);
-  });
-
-  document.getElementById('back-to-result').onclick = () => {
-    screen = 'result';
-    render();
-  };
-
-  document.getElementById('complete-btn').onclick = () => {
-    renderDressupComplete();
-  };
-}
-
-function renderDressupComplete(){
-  const filled = Object.values(outfit).filter(Boolean).length;
-  root.innerHTML = `
-    <div class="result-box" style="background:linear-gradient(135deg, #ffb6c1, #ff8fab)">
-      <div class="dressup-stage" style="background:rgba(255,255,255,0.15); margin-bottom:14px;">
-        <div class="char-face">😊</div>
-        <div class="char-slot">${outfit.accessory ? outfit.accessory.emoji : ''}</div>
-        <div class="char-slot">${outfit.top ? outfit.top.emoji : ''}</div>
-        <div class="char-slot">${outfit.bottom ? outfit.bottom.emoji : ''}</div>
-        <div class="char-slot">${outfit.shoes ? outfit.shoes.emoji : ''}</div>
-      </div>
-      <p class="result-label">코디 완성!</p>
-      <p class="result-name" style="font-size:18px;">${filled} / 4 아이템 착용</p>
-      <p class="result-desc">${filled === 4 ? '완벽한 수련회 룩이에요! 이대로 출발해도 좋겠어요.' : '몇 가지를 더 골라서 코디를 완성해보세요.'}</p>
-    </div>
-    <button class="start-btn" id="edit-again">👕 다시 코디하기</button>
-    <button class="retry-btn" id="restart-all">🔄 처음부터 다시</button>
-  `;
-  document.getElementById('edit-again').onclick = () => {
-    screen = 'dressup';
-    render();
-  };
-  document.getElementById('restart-all').onclick = () => {
-    screen = 'intro';
-    current = 0;
-    Object.keys(scores).forEach(k => scores[k] = 0);
-    answers.fill(null);
-    outfit = {top:null, bottom:null, shoes:null, accessory:null};
-    render();
-  };
 }
 
 render();
