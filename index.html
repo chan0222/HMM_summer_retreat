@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2026 HMM 수련회 유형 테스트</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Pretendard", "Noto Sans KR", sans-serif;
+    background: linear-gradient(180deg, #fff6e9 0%, #ffeede 100%);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 16px;
+  }
+  .card {
+    width: 100%;
+    max-width: 420px;
+    background: #fffaf3;
+    border-radius: 24px;
+    box-shadow: 0 8px 32px rgba(180, 120, 60, 0.15);
+    padding: 28px 24px 24px;
+    position: relative;
+    overflow: hidden;
+  }
+  .top-emoji {
+    text-align: center;
+    font-size: 40px;
+    margin-bottom: 4px;
+  }
+  h1 {
+    text-align: center;
+    font-size: 19px;
+    font-weight: 700;
+    color: #7a4a1f;
+    margin: 0 0 4px;
+  }
+  .sub {
+    text-align: center;
+    font-size: 13px;
+    color: #b08756;
+    margin-bottom: 20px;
+  }
+  .progress-wrap {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: #b08756;
+    margin-bottom: 6px;
+  }
+  .bar-bg {
+    height: 8px;
+    background: #f4e2c8;
+    border-radius: 99px;
+    overflow: hidden;
+    margin-bottom: 22px;
+  }
+  .bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #ff9a52, #ffb347);
+    border-radius: 99px;
+    transition: width 0.35s ease;
+  }
+  .question {
+    font-size: 17px;
+    font-weight: 700;
+    color: #4a3320;
+    text-align: center;
+    margin: 0 0 18px;
+    line-height: 1.5;
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .opts {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .opt-btn {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    text-align: left;
+    padding: 14px 16px;
+    border-radius: 14px;
+    border: 1.5px solid #f0d9b5;
+    background: #fff;
+    font-size: 15px;
+    color: #5c4429;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    font-family: inherit;
+  }
+  .opt-btn:hover {
+    border-color: #ffb347;
+    background: #fff6e9;
+    transform: translateY(-1px);
+  }
+  .opt-btn:active {
+    transform: scale(0.98);
+  }
+  .opt-icon {
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+  .result-box {
+    text-align: center;
+    border-radius: 18px;
+    padding: 28px 20px;
+    color: #fff;
+  }
+  .result-emoji {
+    font-size: 52px;
+    margin-bottom: 8px;
+  }
+  .result-label {
+    font-size: 13px;
+    opacity: 0.9;
+    margin: 0 0 6px;
+  }
+  .result-name {
+    font-size: 22px;
+    font-weight: 800;
+    margin: 0 0 14px;
+  }
+  .result-desc {
+    font-size: 14.5px;
+    line-height: 1.65;
+    margin: 0 0 16px;
+    opacity: 0.97;
+  }
+  .result-tag {
+    display: inline-block;
+    font-size: 12.5px;
+    font-weight: 600;
+    padding: 6px 14px;
+    border-radius: 99px;
+    background: rgba(255,255,255,0.25);
+  }
+  .retry-btn {
+    width: 100%;
+    margin-top: 16px;
+    padding: 13px;
+    border-radius: 14px;
+    border: 1.5px solid #f0d9b5;
+    background: #fff;
+    font-size: 14.5px;
+    font-weight: 600;
+    color: #7a4a1f;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .retry-btn:hover {
+    background: #fff6e9;
+  }
+  .start-btn {
+    width: 100%;
+    margin-top: 8px;
+    padding: 15px;
+    border-radius: 14px;
+    border: none;
+    background: linear-gradient(90deg, #ff9a52, #ffb347);
+    font-size: 16px;
+    font-weight: 700;
+    color: #fff;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .start-btn:hover {
+    opacity: 0.92;
+  }
+  .back-btn {
+    width: 100%;
+    margin-top: 14px;
+    padding: 10px;
+    border-radius: 14px;
+    border: none;
+    background: transparent;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: #b08756;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .back-btn:hover {
+    color: #7a4a1f;
+  }
+  .opt-selected {
+    border-color: #ffb347 !important;
+    background: #fff6e9 !important;
+  }
+  .footer-note {
+    text-align: center;
+    font-size: 11.5px;
+    color: #c4a172;
+    margin-top: 18px;
+  }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <div id="root"></div>
+</div>
+
+<script>
+const questions = [
+  {q:"수련회 가는 버스를 타자마자 나는?", opts:[
+    {t:"이어폰 끼고 음악 듣기", icon:"🎧", type:"A"},
+    {t:"친구들이랑 수다 떨기", icon:"😂", type:"B"},
+    {t:"창밖 보면서 감성에 젖기", icon:"🌳", type:"C"},
+    {t:"\"찬양 틀어주세요!\"", icon:"🎤", type:"D"}]},
+  {q:"찬양 시간이 시작되면?", opts:[
+    {t:"누구보다 크게 찬양한다", icon:"🙌", type:"D"},
+    {t:"눈 감고 집중한다", icon:"🙏", type:"C"},
+    {t:"율동을 열심히 따라 한다", icon:"💃", type:"B"},
+    {t:"주변 분위기를 즐긴다", icon:"😊", type:"A"}]},
+  {q:"조별 모임에서 나는?", opts:[
+    {t:"분위기를 띄운다", icon:"😂", type:"B"},
+    {t:"나눔을 한다", icon:"🎙️", type:"D"},
+    {t:"조용히 듣는다", icon:"👂", type:"C"},
+    {t:"처음 보는 사람에게 먼저 말 건다", icon:"🤝", type:"A"}]},
+  {q:"쉬는 시간이 생기면?", opts:[
+    {t:"사진 찍으러 간다", icon:"📸", type:"B"},
+    {t:"간식 먹는다", icon:"🍪", type:"A"},
+    {t:"친구랑 산책한다", icon:"🚶", type:"A"},
+    {t:"숙소에서 쉰다", icon:"😴", type:"C"}]},
+  {q:"레크리에이션 시간이 왔다!", opts:[
+    {t:"무조건 참여한다", icon:"🔥", type:"B"},
+    {t:"친구 따라 참여한다", icon:"😅", type:"A"},
+    {t:"응원만 열심히 한다", icon:"👏", type:"C"},
+    {t:"진행을 도와준다", icon:"💛", type:"D"}]},
+  {q:"수련회에서 가장 기대되는 것은?", opts:[
+    {t:"찬양", icon:"🎵", type:"D"},
+    {t:"말씀", icon:"📖", type:"C"},
+    {t:"친구들과의 추억", icon:"🤍", type:"A"},
+    {t:"맛있는 밥", icon:"🍗", type:"B"}]},
+  {q:"혼자 있는 새친구를 발견했다!", opts:[
+    {t:"먼저 다가간다", icon:"🤝", type:"A"},
+    {t:"같이 밥 먹자고 한다", icon:"🍽️", type:"B"},
+    {t:"리더에게 알려준다", icon:"🙋", type:"D"},
+    {t:"눈치만 본다", icon:"👀", type:"C"}]},
+  {q:"캠프파이어 시간!", opts:[
+    {t:"노래 부른다", icon:"🎤", type:"D"},
+    {t:"사진 찍는다", icon:"📸", type:"B"},
+    {t:"불멍한다", icon:"🔥", type:"C"},
+    {t:"깊은 이야기를 나눈다", icon:"🌙", type:"A"}]},
+  {q:"수련회 마지막 날 나는?", opts:[
+    {t:"울면서 집 간다", icon:"😭", type:"C"},
+    {t:"사진 정리한다", icon:"📷", type:"B"},
+    {t:"친구들과 연락처 교환한다", icon:"📱", type:"A"},
+    {t:"벌써 다음 수련회 기대한다", icon:"✨", type:"D"}]},
+  {q:"수련회에서 맡고 싶은 역할은?", opts:[
+    {t:"찬양팀", icon:"🎸", type:"D"},
+    {t:"방송·사진팀", icon:"📷", type:"B"},
+    {t:"진행팀", icon:"🎤", type:"A"},
+    {t:"섬김팀", icon:"💛", type:"C"}]}
+];
+
+const results = {
+  A: {name:"인싸 친화형", emoji:"🤝", color:"linear-gradient(135deg, #ff8a65, #ff6f43)",
+      desc:"새로운 사람에게 먼저 다가가고 관계를 만드는 데 진심인 당신! 이번 수련회에서 가장 많은 친구를 사귈 사람입니다.",
+      tag:"섬김 & 진행팀 추천"},
+  B: {name:"흥부자 무드메이커형", emoji:"🎉", color:"linear-gradient(135deg, #ffb347, #ff9a3d)",
+      desc:"분위기를 띄우고 추억을 기록하는 당신! 어디서든 에너지를 불어넣는 수련회의 활력소입니다.",
+      tag:"방송·사진팀 추천"},
+  C: {name:"감성 깊은 묵상형", emoji:"🌙", color:"linear-gradient(135deg, #9b8cf2, #7d6ce8)",
+      desc:"조용히 듣고 깊이 느끼는 당신! 말씀과 찬양 속에서 가장 깊은 은혜를 받는 타입입니다.",
+      tag:"말씀 묵상 & 섬김팀 추천"},
+  D: {name:"열정 찬양러형", emoji:"🎤", color:"linear-gradient(135deg, #4fc3a1, #2fa888)",
+      desc:"누구보다 크게 찬양하고 무대를 즐기는 당신! 모두를 찬양의 자리로 이끄는 리더입니다.",
+      tag:"찬양팀 추천"}
+};
+
+let started = false;
+let current = 0;
+const scores = {A:0,B:0,C:0,D:0};
+const answers = new Array(questions.length).fill(null);
+const root = document.getElementById('root');
+
+function renderIntro(){
+  root.innerHTML = `
+    <div class="top-emoji">🌴</div>
+    <h1>2026 HMM 수련회 유형 테스트</h1>
+    <p class="sub">10개의 질문으로 알아보는 나의 수련회 스타일</p>
+    <button class="start-btn" id="start">테스트 시작하기</button>
+    <p class="footer-note">소요시간 약 1분</p>
+  `;
+  document.getElementById('start').onclick = () => {
+    started = true;
+    render();
+  };
+}
+
+function render(){
+  if (!started) { renderIntro(); return; }
+  if (current < questions.length) renderQuestion();
+  else renderResult();
+}
+
+function renderQuestion(){
+  const q = questions[current];
+  const pct = Math.round((current/questions.length)*100);
+  root.innerHTML = `
+    <div class="progress-wrap">
+      <span>Q${current+1} / ${questions.length}</span>
+      <span>${pct}%</span>
+    </div>
+    <div class="bar-bg"><div class="bar-fill" style="width:${pct}%"></div></div>
+    <p class="question">${q.q}</p>
+    <div class="opts" id="opts"></div>
+    ${current > 0 ? '<button class="back-btn" id="back">← 이전 질문</button>' : ''}
+  `;
+  const wrap = root.querySelector('#opts');
+  q.opts.forEach(o => {
+    const btn = document.createElement('button');
+    btn.className = 'opt-btn';
+    if (answers[current] === o.type) btn.classList.add('opt-selected');
+    btn.innerHTML = `<span class="opt-icon">${o.icon}</span><span>${o.t}</span>`;
+    btn.onclick = () => {
+      if (answers[current]) scores[answers[current]]--;
+      scores[o.type]++;
+      answers[current] = o.type;
+      current++;
+      render();
+    };
+    wrap.appendChild(btn);
+  });
+  if (current > 0) {
+    document.getElementById('back').onclick = () => {
+      current--;
+      render();
+    };
+  }
+}
+
+function renderResult(){
+  let top = 'A';
+  Object.keys(scores).forEach(k => { if (scores[k] > scores[top]) top = k; });
+  const r = results[top];
+  root.innerHTML = `
+    <div class="result-box" style="background:${r.color}">
+      <div class="result-emoji">${r.emoji}</div>
+      <p class="result-label">당신의 수련회 유형은</p>
+      <p class="result-name">${r.name}</p>
+      <p class="result-desc">${r.desc}</p>
+      <span class="result-tag">${r.tag}</span>
+    </div>
+    <button class="retry-btn" id="retry">🔄 다시 테스트하기</button>
+  `;
+  document.getElementById('retry').onclick = () => {
+    started = false;
+    current = 0;
+    Object.keys(scores).forEach(k => scores[k] = 0);
+    answers.fill(null);
+    render();
+  };
+}
+
+render();
+</script>
+
+</body>
+</html>
