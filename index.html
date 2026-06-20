@@ -224,6 +224,14 @@
     transform: translateX(-50%);
     pointer-events: none;
   }
+  .stage-full {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    pointer-events: none;
+  }
   .stage-placeholder {
     position: absolute;
     inset: 0;
@@ -515,7 +523,7 @@ function shareKakao(title, desc){
       content: {
         title: title,
         description: desc,
-        imageUrl: location.origin + location.pathname.replace(/\/[^/]*$/, '') + '/assets/background/bg_campsite_day.png',
+        imageUrl: location.origin + location.pathname.replace(/\/[^/]*$/, '') + '/assets/body.png',
         link: { mobileWebUrl: location.href, webUrl: location.href }
       },
       buttons: [{ title: '나도 해보기', link: { mobileWebUrl: location.href, webUrl: location.href } }]
@@ -557,7 +565,7 @@ function loadImg(src){
 }
 
 async function buildCompositeImage(){
-  const W = 800, H = 1000;
+  const W = 900, H = 900;
   const canvas = document.createElement('canvas');
   canvas.width = W; canvas.height = H;
   const ctx = canvas.getContext('2d');
@@ -565,46 +573,31 @@ async function buildCompositeImage(){
   ctx.fillStyle = '#fff6e9';
   ctx.fillRect(0, 0, W, H);
 
-  if (outfit.background) {
-    const bg = await loadImg(`${ASSET}/${outfit.background.file}`);
-    const scale = Math.max(W / bg.width, H / bg.height);
-    const w = bg.width * scale, h = bg.height * scale;
-    ctx.drawImage(bg, (W - w) / 2, (H - h) / 2, w, h);
-  }
-
-  const bodyFile = outfit.gender === 'girl' ? 'body/body_girl.png' : 'body/body_boy.png';
-  const body = await loadImg(`${ASSET}/${bodyFile}`);
-  const bodyH = H * 0.6;
-  const scale = bodyH / body.height;
-  const bodyW = body.width * scale;
-  const bodyX = W / 2 - bodyW / 2;
-  const bodyY = H - bodyH - H * 0.1;
-
-  async function drawLayer(item, offsetYRatio, itemScale, alignRight){
+  // body/face/의상 PNG는 모두 같은 900x900 캔버스 기준으로 정렬되어 있어
+  // 그대로 풀사이즈로 겹치기만 하면 됨
+  async function drawFull(item){
     if (!item) return;
     const img = await loadImg(`${ASSET}/${item.file}`);
-    const w = img.width * scale * itemScale;
-    const h = img.height * scale * itemScale;
-    const x = alignRight ? (bodyX + bodyW - w - 6) : (W / 2 - w / 2);
-    const y = bodyY + bodyH * offsetYRatio;
-    ctx.drawImage(img, x, y, w, h);
+    ctx.drawImage(img, 0, 0, W, H);
   }
 
-  ctx.drawImage(body, bodyX, bodyY, bodyW, bodyH);
-  await drawLayer(outfit.bottom, 0.5, 1, false);
-  await drawLayer(outfit.shoes, 0.84, 0.9, false);
-  await drawLayer(outfit.top, 0.24, 1, false);
-  await drawLayer(outfit.hair, 0.0, 1, false);
-  await drawLayer(outfit.accessory, 0.78, 0.55, true);
+  await drawFull(outfit.hair);
+  await drawFull({file:'body.png'});
+  await drawFull(outfit.bangs);
+  await drawFull({file:'face.png'});
+  await drawFull(outfit.top);
+  await drawFull(outfit.bottom);
+  await drawFull(outfit.shoes);
+  await drawFull(outfit.item);
 
   const r = results[resultType];
   ctx.textAlign = 'center';
   ctx.fillStyle = '#7a4a1f';
-  ctx.font = 'bold 34px "Apple SD Gothic Neo", "Noto Sans KR", sans-serif';
+  ctx.font = 'bold 38px "Apple SD Gothic Neo", "Noto Sans KR", sans-serif';
   ctx.fillText('2026 HMM 수련회', W / 2, 64);
-  ctx.font = 'bold 26px "Apple SD Gothic Neo", "Noto Sans KR", sans-serif';
+  ctx.font = 'bold 28px "Apple SD Gothic Neo", "Noto Sans KR", sans-serif';
   ctx.fillStyle = '#ff7a3d';
-  ctx.fillText(`${r.name} 코디 완성! 🎉`, W / 2, 102);
+  ctx.fillText(`${r.name} 코디 완성! 🎉`, W / 2, 104);
 
   return canvas;
 }
@@ -660,80 +653,46 @@ async function shareCompositeImage(){
 // ===== 코디 합성 이미지 생성 끝 =====
 
 const outfitCategories = [
-  {key:'hair', label:'헤어', icon:'💇'},
+  {key:'hair', label:'머리', icon:'💇'},
+  {key:'bangs', label:'앞머리', icon:'✂️'},
   {key:'top', label:'상의', icon:'👕'},
   {key:'bottom', label:'하의', icon:'👖'},
   {key:'shoes', label:'신발', icon:'👟'},
-  {key:'accessory', label:'소품', icon:'🎒'},
-  {key:'background', label:'배경', icon:'🏕️'}
+  {key:'item', label:'아이템', icon:'🎒'}
 ];
 
 const ASSET = 'assets';
 
-const hairItems = {
-  boy: [
-    {name:'댄디컷', file:'hair/hair_m_dandy.png'},
-    {name:'심플머리', file:'hair/hair_m_simpyo.png'},
-    {name:'가르마', file:'hair/hair_m_garma.png'},
-    {name:'투블럭', file:'hair/hair_m_2block.png'},
-    {name:'볼륨펌', file:'hair/hair_m_volume.png'}
-  ],
-  girl: [
-    {name:'긴 생머리', file:'hair/hair_f_long.png'},
-    {name:'단발', file:'hair/hair_f_bob.png'},
-    {name:'웨이브', file:'hair/hair_f_wave.png'},
-    {name:'포니테일', file:'hair/hair_f_pony.png'},
-    {name:'반묶음', file:'hair/hair_f_half.png'}
-  ]
-};
+// 머리(뒷머리, 맨 뒤 레이어)
+const hairItemsList = [
+  {name:'긴 생머리', file:'hair/hair_long.png'}
+];
+
+// 앞머리(표정보다 앞 레이어)
+const bangsItemsList = [
+  {name:'단발 앞머리', file:'bangs/bangs_bob.png'}
+];
 
 const outfitItems = {
   top: [
-    {name:'수련회 티셔츠', file:'tops/top_tshirt_white.png'},
-    {name:'수련회 메인티', file:'tops/top_tshirt_navy.png'},
-    {name:'후드티', file:'tops/top_hoodie.png'},
-    {name:'체크셔츠', file:'tops/top_check_shirt.png'},
-    {name:'조끼', file:'tops/top_vest.png'},
-    {name:'맨투맨', file:'tops/top_sweatshirt.png'},
-    {name:'카라티', file:'tops/top_collar.png'},
-    {name:'반팔셔츠', file:'tops/top_shortsleeve.png'}
+    {name:'화이트 반팔티', file:'top/top_white.png'},
+    {name:'네이비 반팔티', file:'top/top_navy.png'}
   ],
   bottom: [
-    {name:'청바지', file:'pants/pants_jeans.png'},
-    {name:'반바지', file:'pants/pants_shorts.png'},
-    {name:'카고팬츠', file:'pants/pants_cargo.png'},
-    {name:'트레이닝팬츠', file:'pants/pants_training.png'},
-    {name:'슬랙스', file:'pants/pants_slacks.png'}
+    {name:'블랙 슬랙스', file:'bottom/pants_black.png'}
   ],
   shoes: [
-    {name:'운동화', file:'shoes/shoes_sneakers.png'},
-    {name:'샌들', file:'shoes/shoes_sandals.png'},
-    {name:'슬리퍼', file:'shoes/shoes_slipper.png'},
-    {name:'하이탑', file:'shoes/shoes_hightop.png'}
+    {name:'화이트 스니커즈', file:'shoes/shoes_sneaker.png'}
   ],
-  accessory: [
-    {name:'성경책', file:'accessory/acc_bible.png'},
-    {name:'기타', file:'accessory/acc_guitar.png'},
-    {name:'마이크', file:'accessory/acc_mic.png'},
-    {name:'카메라', file:'accessory/acc_camera.png'},
-    {name:'백팩', file:'accessory/acc_backpack.png'},
-    {name:'십자가 목걸이', file:'accessory/acc_cross_necklace.png'},
-    {name:'캠프 모자', file:'accessory/acc_camp_hat.png'},
-    {name:'텀블러', file:'accessory/acc_tumbler.png'},
-    {name:'꽃 화관', file:'accessory/acc_flower_crown.png'},
-    {name:'응원봉', file:'accessory/acc_lightstick.png'}
-  ],
-  background: [
-    {name:'캠프장 낮', file:'background/bg_campsite_day.png'},
-    {name:'캠프장 밤', file:'background/bg_campsite_night.png'},
-    {name:'교회 내부', file:'background/bg_church.png'},
-    {name:'바닷가', file:'background/bg_beach.png'},
-    {name:'산과 호수', file:'background/bg_mountain_lake.png'},
-    {name:'잔디밭', file:'background/bg_grassfield.png'}
+  item: [
+    {name:'안경', file:'item/glasses.png'},
+    {name:'캠프 모자', file:'item/cap.png'},
+    {name:'텀블러', file:'item/tumbler.png'},
+    {name:'성경책', file:'item/bible.png'}
   ]
 };
 
-let outfit = {gender:null, hair:null, top:null, bottom:null, shoes:null, accessory:null, background:null};
+let outfit = {hair:null, bangs:null, top:null, bottom:null, shoes:null, item:null};
 let activeCategory = 'hair';
 let resultType = 'A';
 
@@ -754,7 +713,7 @@ function renderResult(){
     <button class="retry-btn" id="retry">🔄 다시 테스트하기</button>
   `;
   document.getElementById('next-game').onclick = () => {
-    screen = outfit.gender ? 'dressup' : 'dressup-gender';
+    screen = 'dressup';
     render();
   };
   document.getElementById('retry').onclick = () => {
@@ -766,53 +725,24 @@ function renderResult(){
   };
 }
 
-function renderGenderSelect(){
-  root.innerHTML = `
-    <div class="top-emoji">👗</div>
-    <h1>캐릭터를 선택해주세요</h1>
-    <p class="sub">코디할 캐릭터를 골라주세요</p>
-    <div class="gender-grid">
-      <button class="gender-btn" id="pick-boy">
-        <img src="${ASSET}/body/body_boy.png" alt="남자 캐릭터" />
-        <span>남자</span>
-      </button>
-      <button class="gender-btn" id="pick-girl">
-        <img src="${ASSET}/body/body_girl.png" alt="여자 캐릭터" />
-        <span>여자</span>
-      </button>
-    </div>
-  `;
-  document.getElementById('pick-boy').onclick = () => {
-    outfit.gender = 'boy';
-    screen = 'dressup';
-    render();
-  };
-  document.getElementById('pick-girl').onclick = () => {
-    outfit.gender = 'girl';
-    screen = 'dressup';
-    render();
-  };
-}
-
 function stageHTML(){
-  const bodyFile = outfit.gender === 'girl' ? 'body/body_girl.png' : 'body/body_boy.png';
-  const hairList = outfit.gender === 'girl' ? hairItems.girl : hairItems.boy;
-  const bgFile = outfit.background ? `${ASSET}/${outfit.background.file}` : null;
   return `
     <div class="dressup-stage">
-      ${bgFile ? `<img class="stage-bg" src="${bgFile}" alt="배경" />` : ''}
-      <img class="stage-layer" src="${ASSET}/${bodyFile}" alt="캐릭터" style="bottom:8px; width:160px; z-index:2;" />
-      ${outfit.bottom ? `<img class="stage-layer" src="${ASSET}/${outfit.bottom.file}" alt="${outfit.bottom.name}" style="bottom:18px; width:100px; z-index:3;" />` : ''}
-      ${outfit.shoes ? `<img class="stage-layer" src="${ASSET}/${outfit.shoes.file}" alt="${outfit.shoes.name}" style="bottom:6px; width:70px; z-index:4;" />` : ''}
-      ${outfit.top ? `<img class="stage-layer" src="${ASSET}/${outfit.top.file}" alt="${outfit.top.name}" style="bottom:90px; width:110px; z-index:5;" />` : ''}
-      ${outfit.hair ? `<img class="stage-layer" src="${ASSET}/${outfit.hair.file}" alt="${outfit.hair.name}" style="top:6px; width:110px; z-index:6;" />` : ''}
-      ${outfit.accessory ? `<img class="stage-layer" src="${ASSET}/${outfit.accessory.file}" alt="${outfit.accessory.name}" style="bottom:10px; right:10px; left:auto; transform:none; width:56px; z-index:7;" />` : ''}
+      ${outfit.hair ? `<img class="stage-full" src="${ASSET}/${outfit.hair.file}" alt="${outfit.hair.name}" style="z-index:1;" />` : ''}
+      <img class="stage-full" src="${ASSET}/body.png" alt="캐릭터" style="z-index:2;" />
+      ${outfit.bangs ? `<img class="stage-full" src="${ASSET}/${outfit.bangs.file}" alt="${outfit.bangs.name}" style="z-index:3;" />` : ''}
+      <img class="stage-full" src="${ASSET}/face.png" alt="얼굴" style="z-index:4;" />
+      ${outfit.top ? `<img class="stage-full" src="${ASSET}/${outfit.top.file}" alt="${outfit.top.name}" style="z-index:5;" />` : ''}
+      ${outfit.bottom ? `<img class="stage-full" src="${ASSET}/${outfit.bottom.file}" alt="${outfit.bottom.name}" style="z-index:6;" />` : ''}
+      ${outfit.shoes ? `<img class="stage-full" src="${ASSET}/${outfit.shoes.file}" alt="${outfit.shoes.name}" style="z-index:7;" />` : ''}
+      ${outfit.item ? `<img class="stage-full" src="${ASSET}/${outfit.item.file}" alt="${outfit.item.name}" style="z-index:8;" />` : ''}
     </div>
   `;
 }
 
 function getActiveList(){
-  if (activeCategory === 'hair') return outfit.gender === 'girl' ? hairItems.girl : hairItems.boy;
+  if (activeCategory === 'hair') return hairItemsList;
+  if (activeCategory === 'bangs') return bangsItemsList;
   return outfitItems[activeCategory];
 }
 
@@ -820,7 +750,7 @@ function renderDressup(){
   root.innerHTML = `
     <div class="top-emoji">👗</div>
     <h1>나만의 수련회 코디 완성하기</h1>
-    <p class="sub">헤어·상의·하의·신발·소품·배경을 골라보세요</p>
+    <p class="sub">머리·앞머리·상의·하의·아이템·배경을 골라보세요</p>
     ${stageHTML()}
     <div class="tabs" id="tabs"></div>
     <div class="item-grid" id="items"></div>
@@ -858,7 +788,7 @@ function renderDressup(){
 }
 
 function renderDressupComplete(){
-  const keys = ['hair','top','bottom','shoes','accessory','background'];
+  const keys = ['hair','bangs','top','bottom','shoes','item'];
   const filled = keys.filter(k => outfit[k]).length;
   root.innerHTML = `
     <div class="top-emoji">🎉</div>
@@ -881,7 +811,7 @@ function renderDressupComplete(){
     current = 0;
     Object.keys(scores).forEach(k => scores[k] = 0);
     answers.fill(null);
-    outfit = {gender:null, hair:null, top:null, bottom:null, shoes:null, accessory:null, background:null};
+    outfit = {hair:null, bangs:null, top:null, bottom:null, shoes:null, item:null};
     render();
   };
 }
@@ -904,7 +834,6 @@ function render(){
   if (screen === 'intro') { renderIntro(); return; }
   if (screen === 'quiz') { renderQuestion(); return; }
   if (screen === 'result') { renderResult(); return; }
-  if (screen === 'dressup-gender') { renderGenderSelect(); return; }
   if (screen === 'dressup') { renderDressup(); return; }
 }
 
