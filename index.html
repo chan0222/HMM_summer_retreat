@@ -274,7 +274,7 @@
   }
   .tabs {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     gap: 6px;
     margin-bottom: 14px;
   }
@@ -339,6 +339,54 @@
   }
   .item-none span {
     font-size: 20px;
+  }
+  .color-picker-wrap {
+    margin: -8px 0 16px;
+    padding: 12px;
+    border-radius: 14px;
+    background: #fff6e9;
+    border: 1.5px dashed #f0d9b5;
+  }
+  .color-picker-label {
+    font-size: 12.5px;
+    font-weight: 700;
+    color: #7a4a1f;
+    margin: 0 0 8px;
+  }
+  .color-swatch-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .color-swatch {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 1.5px #e8d2ad;
+    cursor: pointer;
+    padding: 0;
+  }
+  .color-swatch:hover {
+    box-shadow: 0 0 0 1.5px #ffb347;
+  }
+  .color-custom-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 12.5px;
+    color: #5c4429;
+    font-weight: 600;
+  }
+  .color-custom-row input[type="color"] {
+    width: 40px;
+    height: 28px;
+    border: none;
+    border-radius: 8px;
+    padding: 0;
+    cursor: pointer;
+    background: none;
   }
   .share-row {
     display: grid;
@@ -577,14 +625,14 @@ async function buildCompositeImage(){
   // 그대로 풀사이즈로 겹치기만 하면 됨
   async function drawFull(item){
     if (!item) return;
-    const img = await loadImg(`${ASSET}/${item.file}`);
+    const img = await loadImg(`${resolveSrc(item)}`);
     ctx.drawImage(img, 0, 0, W, H);
   }
 
   await drawFull(outfit.hair);
-  await drawFull({file:'body.png'});
+  await drawFull({file: bodyFileState});
   await drawFull(outfit.bangs);
-  await drawFull({file:'face.png'});
+  await drawFull({file: faceFileState});
   await drawFull(outfit.bottom);
   await drawFull(outfit.top);
   await drawFull(outfit.shoes);
@@ -655,6 +703,8 @@ async function shareCompositeImage(){
 const outfitCategories = [
   {key:'hair', label:'머리', icon:'💇'},
   {key:'bangs', label:'앞머리', icon:'✂️'},
+  {key:'skin', label:'피부', icon:'🤚'},
+  {key:'eyes', label:'눈동자', icon:'👁️'},
   {key:'top', label:'상의', icon:'👕'},
   {key:'bottom', label:'하의', icon:'👖'},
   {key:'shoes', label:'신발', icon:'👟'},
@@ -662,6 +712,138 @@ const outfitCategories = [
 ];
 
 const ASSET = 'assets';
+function resolveSrc(item){
+  if (!item) return '';
+  return item.file.startsWith('data:') ? item.file : `${ASSET}/${item.file}`;
+}
+
+// ===== 색상 변경 (채도 기반 선택적 색상 교체) =====
+// 머리/앞머리: 채도가 있는 모발 픽셀만 색 변경 (검정 윤곽선은 채도 0이라 영향 없음)
+// 눈동자: 채도가 있는 갈색 동공만 색 변경 (검정 속눈썹/흰자는 영향 없음)
+// 피부: 채도가 있는 살구색 피부만 색 변경 (흰색 옷/검정 윤곽선은 영향 없음)
+const baseImageCache = {}; // src -> Promise<Image>
+
+function getBaseImage(src){
+  if (!baseImageCache[src]) {
+    baseImageCache[src] = loadImg(src.startsWith('data:') ? src : `${ASSET}/${src}`);
+  }
+  return baseImageCache[src];
+}
+
+function rgbToHsl(r, g, b){
+  r /= 255; g /= 255; b /= 255;
+  const max = Math.max(r, g, b), min = Math.min(r, g, b);
+  let h, s, l = (max + min) / 2;
+  if (max === min) { h = s = 0; }
+  else {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    switch (max) {
+      case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+      case g: h = (b - r) / d + 2; break;
+      default: h = (r - g) / d + 4;
+    }
+    h /= 6;
+  }
+  return [h, s, l];
+}
+
+function hslToRgb(h, s, l){
+  if (s === 0) { const v = Math.round(l * 255); return [v, v, v]; }
+  const hue2rgb = (p, q, t) => {
+    if (t < 0) t += 1;
+    if (t > 1) t -= 1;
+    if (t < 1 / 6) return p + (q - p) * 6 * t;
+    if (t < 1 / 2) return q;
+    if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+    return p;
+  };
+  const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+  const p = 2 * l - q;
+  return [
+    Math.round(hue2rgb(p, q, h + 1 / 3) * 255),
+    Math.round(hue2rgb(p, q, h) * 255),
+    Math.round(hue2rgb(p, q, h - 1 / 3) * 255)
+  ];
+}
+
+function hexToHsl(hex){
+  const r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16);
+  return rgbToHsl(r, g, b);
+}
+
+// satMin: 이 값보다 채도가 높은 픽셀만 색 변경 대상으로 인식 (흰/검/회색 보호)
+async function selectiveRecolor(src, targetHex, satMin = 0.06, workSize = 900){
+  const baseImg = await getBaseImage(src);
+  const canvas = document.createElement('canvas');
+  canvas.width = workSize; canvas.height = workSize;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(baseImg, 0, 0, workSize, workSize);
+  const imageData = ctx.getImageData(0, 0, workSize, workSize);
+  const data = imageData.data;
+  const [th, ts] = hexToHsl(targetHex);
+  const tl = hexToHsl(targetHex)[2];
+
+  // 1차 패스: 색 변경 대상 픽셀들의 평균 명도(L) 계산
+  // (원본이 전체적으로 아주 밝은/어두운 톤이어도, 고른 명도 기준점을 잡아
+  //  타겟 색상의 명도로 제대로 재배치하기 위함)
+  let sumL = 0, cnt = 0;
+  for (let i = 0; i < data.length; i += 4) {
+    if (data[i + 3] < 5) continue;
+    const [, s, l] = rgbToHsl(data[i], data[i + 1], data[i + 2]);
+    if (s > satMin) { sumL += l; cnt++; }
+  }
+  const avgL = cnt > 0 ? sumL / cnt : 0.5;
+
+  // 2차 패스: 실제 색상 교체 (명도는 타겟 기준 + 원본의 음영 변화량만 반영)
+  for (let i = 0; i < data.length; i += 4) {
+    if (data[i + 3] < 5) continue;
+    const [, s, l] = rgbToHsl(data[i], data[i + 1], data[i + 2]);
+    if (s > satMin) {
+      const newL = Math.min(1, Math.max(0, tl + (l - avgL)));
+      const [nr, ng, nb] = hslToRgb(th, ts, newL);
+      data[i] = nr; data[i + 1] = ng; data[i + 2] = nb;
+    }
+  }
+  ctx.putImageData(imageData, 0, 0);
+  return canvas.toDataURL('image/png');
+}
+
+const hairColorPresets = [
+  {name:'내추럴 브라운', hex:'#a87752'},
+  {name:'다크 브라운', hex:'#5c4030'},
+  {name:'블랙', hex:'#2b2420'},
+  {name:'애쉬 그레이', hex:'#9a9a9a'},
+  {name:'와인', hex:'#7a3b3b'},
+  {name:'핑크', hex:'#e8a3c0'},
+  {name:'애쉬 블루', hex:'#7d93a8'},
+  {name:'플래티넘', hex:'#e8e0d0'}
+];
+
+const eyeColorPresets = [
+  {name:'다크 브라운', hex:'#452f1e'},
+  {name:'블랙', hex:'#1c1410'},
+  {name:'헤이즐', hex:'#8a6a3a'},
+  {name:'그레이', hex:'#6b6b70'},
+  {name:'블루', hex:'#4a6fa5'},
+  {name:'그린', hex:'#4f7a4f'},
+  {name:'바이올렛', hex:'#7a5a9a'},
+  {name:'레드브라운', hex:'#7a3b2e'}
+];
+
+const skinColorPresets = [
+  {name:'라이트', hex:'#fee9d9'},
+  {name:'페어', hex:'#fcdcc4'},
+  {name:'베이지', hex:'#f0c8a0'},
+  {name:'탄', hex:'#d9a373'},
+  {name:'딥', hex:'#a8724a'},
+  {name:'올리브', hex:'#c9a878'}
+];
+
+// 기본(고정) 레이어이지만 색이 바뀌면 data URL로 교체되는 상태
+let bodyFileState = 'body.png';
+let faceFileState = 'face.png';
+// ===== 색상 변경 끝 =====
 
 // 머리(뒷머리, 맨 뒤 레이어)
 const hairItemsList = [
@@ -695,6 +877,8 @@ const outfitItems = {
 let outfit = {hair:null, bangs:null, top:null, bottom:null, shoes:null, item:null};
 let activeCategory = 'hair';
 let resultType = 'A';
+let hairBaseFile = null;   // 색상 변경의 기준이 되는 원본 머리 PNG 경로
+let bangsBaseFile = null;  // 색상 변경의 기준이 되는 원본 앞머리 PNG 경로
 
 function renderResult(){
   let top = 'A';
@@ -702,6 +886,10 @@ function renderResult(){
   resultType = top;
   const r = results[top];
   root.innerHTML = `
+    <div class="top-emoji">🎉</div>
+    <h1>완성! 나의 수련회 캐릭터 & 결과</h1>
+    <p class="sub">코디한 캐릭터와 유형 테스트 결과예요</p>
+    ${stageHTML()}
     <div class="result-box" style="background:${r.color}">
       <div class="result-emoji">${r.emoji}</div>
       <p class="result-label">당신의 수련회 유형은</p>
@@ -709,18 +897,30 @@ function renderResult(){
       <p class="result-desc">${r.desc}</p>
       <span class="result-tag">${r.tag}</span>
     </div>
-    <button class="start-btn" id="next-game">👕 코디 게임 하러 가기</button>
-    <button class="retry-btn" id="retry">🔄 다시 테스트하기</button>
+    <button class="start-btn" id="share-image-btn">📷 캐릭터+결과 이미지로 공유하기</button>
+    <button class="retry-btn" id="save-image-btn">💾 이미지 저장</button>
+    <p class="footer-note" style="margin-top:14px;">또는 링크로 공유하기</p>
+    ${shareRowHTML()}
+    <button class="back-btn" id="edit-outfit">👕 코디 다시 하기</button>
+    <button class="back-btn" id="restart-all">🔄 처음부터 다시</button>
   `;
-  document.getElementById('next-game').onclick = () => {
+  bindShareRow(`나는 "${r.name}"! 코디까지 완성했어 🎉`, '너도 코디하고 유형 테스트 해볼래?');
+  document.getElementById('share-image-btn').onclick = () => shareCompositeImage();
+  document.getElementById('save-image-btn').onclick = () => saveCompositeImage();
+  document.getElementById('edit-outfit').onclick = () => {
     screen = 'dressup';
     render();
   };
-  document.getElementById('retry').onclick = () => {
+  document.getElementById('restart-all').onclick = () => {
     screen = 'intro';
     current = 0;
     Object.keys(scores).forEach(k => scores[k] = 0);
     answers.fill(null);
+    outfit = {hair:null, bangs:null, top:null, bottom:null, shoes:null, item:null};
+    hairBaseFile = null;
+    bangsBaseFile = null;
+    bodyFileState = 'body.png';
+    faceFileState = 'face.png';
     render();
   };
 }
@@ -728,14 +928,14 @@ function renderResult(){
 function stageHTML(){
   return `
     <div class="dressup-stage">
-      ${outfit.hair ? `<img class="stage-full" src="${ASSET}/${outfit.hair.file}" alt="${outfit.hair.name}" style="z-index:1;" />` : ''}
-      <img class="stage-full" src="${ASSET}/body.png" alt="캐릭터" style="z-index:2;" />
-      ${outfit.bangs ? `<img class="stage-full" src="${ASSET}/${outfit.bangs.file}" alt="${outfit.bangs.name}" style="z-index:3;" />` : ''}
-      <img class="stage-full" src="${ASSET}/face.png" alt="얼굴" style="z-index:5;" />
-      ${outfit.bottom ? `<img class="stage-full" src="${ASSET}/${outfit.bottom.file}" alt="${outfit.bottom.name}" style="z-index:6;" />` : ''}
-      ${outfit.top ? `<img class="stage-full" src="${ASSET}/${outfit.top.file}" alt="${outfit.top.name}" style="z-index:4;" />` : ''}
-      ${outfit.shoes ? `<img class="stage-full" src="${ASSET}/${outfit.shoes.file}" alt="${outfit.shoes.name}" style="z-index:7;" />` : ''}
-      ${outfit.item ? `<img class="stage-full" src="${ASSET}/${outfit.item.file}" alt="${outfit.item.name}" style="z-index:8;" />` : ''}
+      ${outfit.hair ? `<img class="stage-full" src="${resolveSrc(outfit.hair)}" alt="${outfit.hair.name}" style="z-index:1;" />` : ''}
+      <img class="stage-full" src="${resolveSrc({file: bodyFileState})}" alt="캐릭터" style="z-index:2;" />
+      ${outfit.bangs ? `<img class="stage-full" src="${resolveSrc(outfit.bangs)}" alt="${outfit.bangs.name}" style="z-index:3;" />` : ''}
+      <img class="stage-full" src="${resolveSrc({file: faceFileState})}" alt="얼굴" style="z-index:4;" />
+      ${outfit.bottom ? `<img class="stage-full" src="${resolveSrc(outfit.bottom)}" alt="${outfit.bottom.name}" style="z-index:5;" />` : ''}
+      ${outfit.top ? `<img class="stage-full" src="${resolveSrc(outfit.top)}" alt="${outfit.top.name}" style="z-index:6;" />` : ''}
+      ${outfit.shoes ? `<img class="stage-full" src="${resolveSrc(outfit.shoes)}" alt="${outfit.shoes.name}" style="z-index:7;" />` : ''}
+      ${outfit.item ? `<img class="stage-full" src="${resolveSrc(outfit.item)}" alt="${outfit.item.name}" style="z-index:8;" />` : ''}
     </div>
   `;
 }
@@ -750,12 +950,11 @@ function renderDressup(){
   root.innerHTML = `
     <div class="top-emoji">👗</div>
     <h1>나만의 수련회 코디 완성하기</h1>
-    <p class="sub">머리·앞머리·상의·하의·아이템·배경을 골라보세요</p>
+    <p class="sub">머리·앞머리·피부·눈동자·상의·하의·아이템을 골라보세요</p>
     ${stageHTML()}
     <div class="tabs" id="tabs"></div>
     <div class="item-grid" id="items"></div>
     <button class="start-btn" id="complete-btn">코디 완성! 🎉</button>
-    <button class="back-btn" id="back-to-result">← 결과 화면으로</button>
   `;
 
   const tabsWrap = root.querySelector('#tabs');
@@ -768,22 +967,82 @@ function renderDressup(){
   });
 
   const itemsWrap = root.querySelector('#items');
-  const noneBtn = document.createElement('button');
-  noneBtn.className = 'item-btn item-none' + (!outfit[activeCategory] ? ' item-selected' : '');
-  noneBtn.innerHTML = `<span>➖</span><span>선택 안함</span>`;
-  noneBtn.onclick = () => { outfit[activeCategory] = null; renderDressup(); };
-  itemsWrap.appendChild(noneBtn);
+  const isColorOnlyCategory = (activeCategory === 'skin' || activeCategory === 'eyes');
 
-  getActiveList().forEach(item => {
-    const selected = outfit[activeCategory] && outfit[activeCategory].name === item.name;
-    const ib = document.createElement('button');
-    ib.className = 'item-btn' + (selected ? ' item-selected' : '');
-    ib.innerHTML = `<img src="${ASSET}/${item.file}" alt="${item.name}" /><span>${item.name}</span>`;
-    ib.onclick = () => { outfit[activeCategory] = item; renderDressup(); };
-    itemsWrap.appendChild(ib);
-  });
+  if (!isColorOnlyCategory) {
+    const noneBtn = document.createElement('button');
+    noneBtn.className = 'item-btn item-none' + (!outfit[activeCategory] ? ' item-selected' : '');
+    noneBtn.innerHTML = `<span>➖</span><span>선택 안함</span>`;
+    noneBtn.onclick = () => { outfit[activeCategory] = null; renderDressup(); };
+    itemsWrap.appendChild(noneBtn);
 
-  document.getElementById('back-to-result').onclick = () => { screen = 'result'; render(); };
+    getActiveList().forEach(item => {
+      const selected = outfit[activeCategory] && outfit[activeCategory].name === item.name;
+      const ib = document.createElement('button');
+      ib.className = 'item-btn' + (selected ? ' item-selected' : '');
+      ib.innerHTML = `<img src="${resolveSrc(item)}" alt="${item.name}" /><span>${item.name}</span>`;
+      ib.onclick = () => {
+        outfit[activeCategory] = item;
+        if (activeCategory === 'hair') hairBaseFile = item.file;
+        if (activeCategory === 'bangs') bangsBaseFile = item.file;
+        renderDressup();
+      };
+      itemsWrap.appendChild(ib);
+    });
+  } else {
+    itemsWrap.style.display = 'none';
+  }
+
+  // 색상 변경 UI: 머리/앞머리(아이템 선택 후) + 피부/눈동자(항상)
+  const colorConfig = {
+    hair:  { presets: hairColorPresets,  defaultHex: '#a87752', getBase: () => hairBaseFile,  setResult: (dataUrl, presetName) => { outfit.hair = { name: `${getActiveList().find(i=>i.file===hairBaseFile)?.name || '머리'} (${presetName})`, file: dataUrl }; } },
+    bangs: { presets: hairColorPresets,  defaultHex: '#a87752', getBase: () => bangsBaseFile, setResult: (dataUrl, presetName) => { outfit.bangs = { name: `${getActiveList().find(i=>i.file===bangsBaseFile)?.name || '앞머리'} (${presetName})`, file: dataUrl }; } },
+    skin:  { presets: skinColorPresets,  defaultHex: '#fee9d9', getBase: () => 'body.png',    setResult: (dataUrl) => { bodyFileState = dataUrl; } },
+    eyes:  { presets: eyeColorPresets,   defaultHex: '#452f1e', getBase: () => 'face.png',    setResult: (dataUrl) => { faceFileState = dataUrl; } }
+  };
+
+  if (colorConfig[activeCategory]) {
+    const cfg = colorConfig[activeCategory];
+    const baseFile = cfg.getBase();
+    if (baseFile) {
+      const colorWrap = document.createElement('div');
+      colorWrap.className = 'color-picker-wrap';
+      colorWrap.innerHTML = `
+        <p class="color-picker-label">🎨 색깔 바꾸기</p>
+        <div class="color-swatch-row" id="swatch-row"></div>
+        <label class="color-custom-row">
+          <span>커스텀 색상</span>
+          <input type="color" id="custom-color" value="${cfg.defaultHex}" />
+        </label>
+      `;
+      root.querySelector('#items').insertAdjacentElement('afterend', colorWrap);
+
+      const swatchRow = colorWrap.querySelector('#swatch-row');
+      cfg.presets.forEach(preset => {
+        const sw = document.createElement('button');
+        sw.className = 'color-swatch';
+        sw.style.background = preset.hex;
+        sw.title = preset.name;
+        sw.onclick = async () => {
+          const satMin = activeCategory === 'skin' ? 0.04 : 0.06;
+          const dataUrl = await selectiveRecolor(baseFile, preset.hex, satMin);
+          cfg.setResult(dataUrl, preset.name);
+          renderDressup();
+        };
+        swatchRow.appendChild(sw);
+      });
+
+      colorWrap.querySelector('#custom-color').addEventListener('input', async (e) => {
+        const hex = e.target.value;
+        const satMin = activeCategory === 'skin' ? 0.04 : 0.06;
+        const dataUrl = await selectiveRecolor(baseFile, hex, satMin);
+        cfg.setResult(dataUrl, '커스텀');
+        const stage = root.querySelector('.dressup-stage');
+        if (stage) stage.outerHTML = stageHTML();
+      });
+    }
+  }
+
   document.getElementById('complete-btn').onclick = () => { renderDressupComplete(); };
 }
 
@@ -795,37 +1054,29 @@ function renderDressupComplete(){
     <h1>코디 완성!</h1>
     <p class="sub">${filled} / ${keys.length} 항목 완성</p>
     ${stageHTML()}
-    <button class="start-btn" id="share-image-btn">📷 코디 이미지로 공유하기</button>
-    <button class="retry-btn" id="save-image-btn">💾 이미지 저장</button>
+    <button class="start-btn" id="go-quiz">다음: 유형 테스트 하러 가기 →</button>
     <button class="back-btn" id="edit-again">👕 다시 코디하기</button>
-    <p class="footer-note" style="margin-top:14px;">또는 링크로 공유하기</p>
-    ${shareRowHTML()}
-    <button class="back-btn" id="restart-all">🔄 처음부터 다시</button>
   `;
-  bindShareRow('내 HMM 수련회 코디 완성! 🎉', '너도 코디 게임 해볼래?');
-  document.getElementById('share-image-btn').onclick = () => shareCompositeImage();
-  document.getElementById('save-image-btn').onclick = () => saveCompositeImage();
-  document.getElementById('edit-again').onclick = () => { screen = 'dressup'; render(); };
-  document.getElementById('restart-all').onclick = () => {
-    screen = 'intro';
+  document.getElementById('go-quiz').onclick = () => {
+    screen = 'quiz';
     current = 0;
     Object.keys(scores).forEach(k => scores[k] = 0);
     answers.fill(null);
-    outfit = {hair:null, bangs:null, top:null, bottom:null, shoes:null, item:null};
     render();
   };
+  document.getElementById('edit-again').onclick = () => { screen = 'dressup'; render(); };
 }
 
 function renderIntro(){
   root.innerHTML = `
     <div class="top-emoji">🌴</div>
     <h1>2026 HMM 수련회 유형 테스트</h1>
-    <p class="sub">10개의 질문으로 알아보는 나의 수련회 스타일</p>
-    <button class="start-btn" id="start">테스트 시작하기</button>
-    <p class="footer-note">소요시간 약 1분</p>
+    <p class="sub">먼저 내 캐릭터를 코디하고, 10개의 질문으로 나의 수련회 스타일을 알아봐요</p>
+    <button class="start-btn" id="start">코디부터 시작하기 👕</button>
+    <p class="footer-note">소요시간 약 2분</p>
   `;
   document.getElementById('start').onclick = () => {
-    screen = 'quiz';
+    screen = 'dressup';
     render();
   };
 }
