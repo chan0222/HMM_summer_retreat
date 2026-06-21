@@ -529,6 +529,29 @@ if (window.Kakao && KAKAO_JS_KEY && !Kakao.isInitialized()) {
   Kakao.init(KAKAO_JS_KEY);
 }
 
+// 카카오톡 공유 카드의 썸네일에 "내가 만든 캐릭터+결과" 이미지를 실제로 띄우려면,
+// 카카오 서버가 접근 가능한 공개 URL이 필요해서(브라우저 안에서만 만든 이미지는 그 자체로는 불가능)
+// ImgBB 업로드 API를 사용해 그 자리에서 이미지를 업로드하고 받은 URL을 사용합니다.
+// https://api.imgbb.com/ 에서 무료로 발급받은 API 키를 아래에 넣으면 활성화돼요.
+const IMGBB_API_KEY = '6711a7bd9dbc6378614ffdfaa831915d';
+
+async function uploadToImgbb(blob){
+  if (!IMGBB_API_KEY) return null;
+  try {
+    const form = new FormData();
+    form.append('image', blob);
+    const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
+      method: 'POST',
+      body: form
+    });
+    const json = await res.json();
+    if (json.success) return json.data.url;
+    return null;
+  } catch (e) {
+    return null;
+  }
+}
+
 function showToast(msg){
   let t = document.getElementById('toast');
   if (!t) {
@@ -564,22 +587,35 @@ function nativeShare(title, text){
   }
 }
 
-function shareKakao(title, desc){
-  if (window.Kakao && Kakao.isInitialized()) {
-    Kakao.Share.sendDefault({
-      objectType: 'feed',
-      content: {
-        title: title,
-        description: desc,
-        imageUrl: location.origin + location.pathname.replace(/\/[^/]*$/, '') + '/assets/body.png',
-        link: { mobileWebUrl: location.href, webUrl: location.href }
-      },
-      buttons: [{ title: '나도 해보기', link: { mobileWebUrl: location.href, webUrl: location.href } }]
-    });
-  } else {
+async function shareKakao(title, desc){
+  if (!(window.Kakao && Kakao.isInitialized())) {
     showToast('카카오 공유 키가 설정되지 않아 링크를 복사할게요');
     copyShareLink();
+    return;
   }
+
+  let imageUrl = location.origin + location.pathname.replace(/\/[^/]*$/, '') + '/assets/body.png';
+
+  if (IMGBB_API_KEY) {
+    showToast('썸네일 이미지를 준비하고 있어요...');
+    try {
+      const canvas = await buildCompositeImage();
+      const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+      const uploadedUrl = await uploadToImgbb(blob);
+      if (uploadedUrl) imageUrl = uploadedUrl;
+    } catch (e) { /* 업로드 실패 시 기본 썸네일 사용 */ }
+  }
+
+  Kakao.Share.sendDefault({
+    objectType: 'feed',
+    content: {
+      title: title,
+      description: desc,
+      imageUrl: imageUrl,
+      link: { mobileWebUrl: location.href, webUrl: location.href }
+    },
+    buttons: [{ title: '나도 해보기', link: { mobileWebUrl: location.href, webUrl: location.href } }]
+  });
 }
 
 function shareRowHTML(){
@@ -633,9 +669,9 @@ async function buildCompositeImage(){
   await drawFull({file: bodyFileState});
   await drawFull(outfit.bangs);
   await drawFull({file: faceFileState});
+  await drawFull(outfit.shoes);
   await drawFull(outfit.bottom);
   await drawFull(outfit.top);
-  await drawFull(outfit.shoes);
   await drawFull(outfit.item);
 
   const r = results[resultType];
@@ -886,12 +922,10 @@ function renderResult(){
   resultType = top;
   const r = results[top];
   root.innerHTML = `
-    <div class="top-emoji">🎉</div>
     <h1>완성! 나의 수련회 캐릭터 & 결과</h1>
     <p class="sub">코디한 캐릭터와 유형 테스트 결과예요</p>
     ${stageHTML()}
     <div class="result-box" style="background:${r.color}">
-      <div class="result-emoji">${r.emoji}</div>
       <p class="result-label">당신의 수련회 유형은</p>
       <p class="result-name">${r.name}</p>
       <p class="result-desc">${r.desc}</p>
@@ -932,9 +966,9 @@ function stageHTML(){
       <img class="stage-full" src="${resolveSrc({file: bodyFileState})}" alt="캐릭터" style="z-index:2;" />
       ${outfit.bangs ? `<img class="stage-full" src="${resolveSrc(outfit.bangs)}" alt="${outfit.bangs.name}" style="z-index:3;" />` : ''}
       <img class="stage-full" src="${resolveSrc({file: faceFileState})}" alt="얼굴" style="z-index:4;" />
-      ${outfit.bottom ? `<img class="stage-full" src="${resolveSrc(outfit.bottom)}" alt="${outfit.bottom.name}" style="z-index:5;" />` : ''}
-      ${outfit.top ? `<img class="stage-full" src="${resolveSrc(outfit.top)}" alt="${outfit.top.name}" style="z-index:6;" />` : ''}
-      ${outfit.shoes ? `<img class="stage-full" src="${resolveSrc(outfit.shoes)}" alt="${outfit.shoes.name}" style="z-index:7;" />` : ''}
+      ${outfit.shoes ? `<img class="stage-full" src="${resolveSrc(outfit.shoes)}" alt="${outfit.shoes.name}" style="z-index:5;" />` : ''}
+      ${outfit.bottom ? `<img class="stage-full" src="${resolveSrc(outfit.bottom)}" alt="${outfit.bottom.name}" style="z-index:6;" />` : ''}
+      ${outfit.top ? `<img class="stage-full" src="${resolveSrc(outfit.top)}" alt="${outfit.top.name}" style="z-index:7;" />` : ''}
       ${outfit.item ? `<img class="stage-full" src="${resolveSrc(outfit.item)}" alt="${outfit.item.name}" style="z-index:8;" />` : ''}
     </div>
   `;
@@ -1043,28 +1077,13 @@ function renderDressup(){
     }
   }
 
-  document.getElementById('complete-btn').onclick = () => { renderDressupComplete(); };
-}
-
-function renderDressupComplete(){
-  const keys = ['hair','bangs','top','bottom','shoes','item'];
-  const filled = keys.filter(k => outfit[k]).length;
-  root.innerHTML = `
-    <div class="top-emoji">🎉</div>
-    <h1>코디 완성!</h1>
-    <p class="sub">${filled} / ${keys.length} 항목 완성</p>
-    ${stageHTML()}
-    <button class="start-btn" id="go-quiz">다음: 유형 테스트 하러 가기 →</button>
-    <button class="back-btn" id="edit-again">👕 다시 코디하기</button>
-  `;
-  document.getElementById('go-quiz').onclick = () => {
+  document.getElementById('complete-btn').onclick = () => {
     screen = 'quiz';
     current = 0;
     Object.keys(scores).forEach(k => scores[k] = 0);
     answers.fill(null);
     render();
   };
-  document.getElementById('edit-again').onclick = () => { screen = 'dressup'; render(); };
 }
 
 function renderIntro(){
