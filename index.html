@@ -771,7 +771,7 @@ async function buildCompositeImage(){
   await drawFull(outfit.shoes);
   await drawFull(outfit.bottom);
   await drawFull(outfit.top);
-  for (const it of outfit.items) await drawFull(it);
+  for (const it of (outfit.items||[])) await drawFull(it);
 
   const r = results[resultType];
   ctx.textAlign = 'center';
@@ -981,21 +981,22 @@ let bodyFileState = 'body.png';
 let faceFileState = 'face/face_default.png';
 // ===== 색상 변경 끝 =====
 
-// 머리: zone 'back'=캐릭터보다 뒤, 'front'=표정보다 앞(뱅 형태로 그려진 스타일)
+// 머리(뒷머리 — 캐릭터보다 뒤 레이어)
 const hairItemsList = [
   {name:'긴 생머리', file:'hair/hair_long.png', zone:'back'},
   {name:'롱 스트레이트', file:'hair/hair_long_straight.png', zone:'back'},
   {name:'볼륨 단발', file:'hair/hair_bowl_round.png', zone:'back'},
-  {name:'웨이브 단발', file:'hair/hair_wavy_center.png', zone:'front'},
-  {name:'사이드 스윕', file:'hair/hair_side_swoop.png', zone:'front'},
-  {name:'숏 프린지', file:'hair/hair_short_fringe.png', zone:'front'},
-  {name:'스파이키', file:'hair/hair_spiky.png', zone:'front'}
+  {name:'잔머리', file:'item/hair_strand.png', zone:'back'}
 ];
 
 // 앞머리(표정보다 앞 레이어)
 const bangsItemsList = [
   {name:'단발 앞머리', file:'bangs/bangs_bob.png'},
-  {name:'스왑 앞머리', file:'bangs/bangs_swoop.png'}
+  {name:'스왑 앞머리', file:'bangs/bangs_swoop.png'},
+  {name:'웨이브 단발', file:'hair/hair_wavy_center.png'},
+  {name:'사이드 스윕', file:'hair/hair_side_swoop.png'},
+  {name:'숏 프린지', file:'hair/hair_short_fringe.png'},
+  {name:'스파이키', file:'hair/hair_spiky.png'}
 ];
 
 // 표정 (얼굴 베이스 자체를 교체)
@@ -1021,8 +1022,7 @@ const outfitItems = {
     {name:'캣아이 선글라스', file:'item/glasses_cateye.png', group:'eyewear'},
     {name:'캠프 모자', file:'item/cap.png'},
     {name:'텀블러', file:'item/tumbler.png'},
-    {name:'성경책', file:'item/bible.png'},
-    {name:'잔머리', file:'item/hair_strand.png'}
+    {name:'성경책', file:'item/bible.png'}
   ]
 };
 
@@ -1102,7 +1102,7 @@ function stageHTML(){
       ${outfit.shoes ? `<img class="stage-full" src="${resolveSrc(outfit.shoes)}" alt="${outfit.shoes.name}" style="z-index:5;" />` : ''}
       ${outfit.bottom ? `<img class="stage-full" src="${resolveSrc(outfit.bottom)}" alt="${outfit.bottom.name}" style="z-index:6;" />` : ''}
       ${outfit.top ? `<img class="stage-full" src="${resolveSrc(outfit.top)}" alt="${outfit.top.name}" style="z-index:7;" />` : ''}
-      ${outfit.items.map(it => `<img class="stage-full" src="${resolveSrc(it)}" alt="${it.name}" style="z-index:8;" />`).join('')}
+      ${(outfit.items||[]).map(it=>`<img class="stage-full" src="${resolveSrc(it)}" alt="${it.name}" style="z-index:8;" />`).join('')}
     </div>
   `;
 }
