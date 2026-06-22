@@ -144,6 +144,49 @@
     border-radius: 99px;
     background: rgba(255,255,255,0.25);
   }
+  .result-title {
+    font-size: 15px;
+    font-weight: 700;
+    margin: 0 0 10px;
+    opacity: 0.95;
+  }
+  .result-notice {
+    font-size: 12.5px;
+    color: #9c7a4d;
+    text-align: center;
+    line-height: 1.6;
+    margin: 0 0 14px;
+    padding: 10px 12px;
+    background: #fff6e9;
+    border-radius: 12px;
+    border: 1px solid #f0d9b5;
+  }
+  .verse-box {
+    margin: 14px 0;
+    padding: 16px;
+    background: #fffaf3;
+    border-radius: 14px;
+    border: 1.5px solid #f0d9b5;
+    text-align: center;
+  }
+  .verse-text {
+    font-size: 13px;
+    color: #5c4429;
+    line-height: 1.7;
+    margin: 0 0 6px;
+    font-style: italic;
+  }
+  .verse-ref {
+    font-size: 12px;
+    color: #b08756;
+    font-weight: 700;
+    margin: 0 0 8px;
+  }
+  .verse-footer {
+    font-size: 12.5px;
+    color: #7a4a1f;
+    margin: 0;
+  }
   .retry-btn {
     width: 100%;
     margin-top: 16px;
@@ -447,76 +490,130 @@
 
 <script>
 const questions = [
-  {q:"수련회 가는 버스를 타자마자 나는?", opts:[
-    {t:"이어폰 끼고 음악 듣기", icon:"🎧", type:"A"},
-    {t:"친구들이랑 수다 떨기", icon:"😂", type:"B"},
-    {t:"창밖 보면서 감성에 젖기", icon:"🌳", type:"C"},
-    {t:"\"찬양 틀어주세요!\"", icon:"🎤", type:"D"}]},
-  {q:"찬양 시간이 시작되면?", opts:[
-    {t:"누구보다 크게 찬양한다", icon:"🙌", type:"D"},
-    {t:"눈 감고 집중한다", icon:"🙏", type:"C"},
-    {t:"율동을 열심히 따라 한다", icon:"💃", type:"B"},
-    {t:"주변 분위기를 즐긴다", icon:"😊", type:"A"}]},
-  {q:"조별 모임에서 나는?", opts:[
-    {t:"분위기를 띄운다", icon:"😂", type:"B"},
-    {t:"나눔을 한다", icon:"🎙️", type:"D"},
-    {t:"조용히 듣는다", icon:"👂", type:"C"},
-    {t:"처음 보는 사람에게 먼저 말 건다", icon:"🤝", type:"A"}]},
-  {q:"쉬는 시간이 생기면?", opts:[
-    {t:"사진 찍으러 간다", icon:"📸", type:"B"},
-    {t:"간식 먹는다", icon:"🍪", type:"A"},
-    {t:"친구랑 산책한다", icon:"🚶", type:"A"},
-    {t:"숙소에서 쉰다", icon:"😴", type:"C"}]},
-  {q:"레크리에이션 시간이 왔다!", opts:[
-    {t:"무조건 참여한다", icon:"🔥", type:"B"},
-    {t:"친구 따라 참여한다", icon:"😅", type:"A"},
-    {t:"응원만 열심히 한다", icon:"👏", type:"C"},
-    {t:"진행을 도와준다", icon:"💛", type:"D"}]},
-  {q:"수련회에서 가장 기대되는 것은?", opts:[
-    {t:"찬양", icon:"🎵", type:"D"},
-    {t:"말씀", icon:"📖", type:"C"},
-    {t:"친구들과의 추억", icon:"🤍", type:"A"},
-    {t:"맛있는 밥", icon:"🍗", type:"B"}]},
-  {q:"혼자 있는 새친구를 발견했다!", opts:[
-    {t:"먼저 다가간다", icon:"🤝", type:"A"},
-    {t:"같이 밥 먹자고 한다", icon:"🍽️", type:"B"},
-    {t:"리더에게 알려준다", icon:"🙋", type:"D"},
-    {t:"눈치만 본다", icon:"👀", type:"C"}]},
-  {q:"캠프파이어 시간!", opts:[
-    {t:"노래 부른다", icon:"🎤", type:"D"},
-    {t:"사진 찍는다", icon:"📸", type:"B"},
-    {t:"불멍한다", icon:"🔥", type:"C"},
-    {t:"깊은 이야기를 나눈다", icon:"🌙", type:"A"}]},
-  {q:"수련회 마지막 날 나는?", opts:[
-    {t:"울면서 집 간다", icon:"😭", type:"C"},
-    {t:"사진 정리한다", icon:"📷", type:"B"},
-    {t:"친구들과 연락처 교환한다", icon:"📱", type:"A"},
-    {t:"벌써 다음 수련회 기대한다", icon:"✨", type:"D"}]},
-  {q:"수련회에서 맡고 싶은 역할은?", opts:[
-    {t:"찬양팀", icon:"🎸", type:"D"},
-    {t:"방송·사진팀", icon:"📷", type:"B"},
-    {t:"진행팀", icon:"🎤", type:"A"},
-    {t:"섬김팀", icon:"💛", type:"C"}]}
+  {q:"\"하늘 아버지께서 구하는 자에게 성령을 주신다\"는 말씀을 들을 때, 지금 내 마음에 가장 가까운 것은?", opts:[
+    {t:"하나님 안에서 사람들과 더 사랑하며 함께하고 싶다", icon:"🍉", type:"수박"},
+    {t:"지친 마음이 위로받고 회복되었으면 좋겠다", icon:"🍑", type:"복숭아"},
+    {t:"하나님을 더 깊이 알고 가까워지고 싶다", icon:"🍇", type:"포도"},
+    {t:"지금의 나와 다르게 새롭게 변화되고 싶다", icon:"🍋", type:"레몬"},
+    {t:"받은 은혜를 용기 있게 삶으로 살아내고 싶다", icon:"🍍", type:"파인애플"}]},
+  {q:"예수님께 \"기도를 가르쳐 주세요\"라고 말한 제자처럼, 나도 기도를 배운다면 가장 배우고 싶은 것은?", opts:[
+    {t:"하나님의 뜻을 더 깊이 알아가는 기도", icon:"🍇", type:"포도"},
+    {t:"내 마음을 숨기지 않고 솔직히 드리는 기도", icon:"🍑🟣", type:"자두"},
+    {t:"불안한 마음을 하나님께 맡기는 기도", icon:"🍈", type:"멜론"},
+    {t:"누가 보지 않아도 신실하게 이어가는 기도", icon:"🍠", type:"참외"},
+    {t:"혼자가 아니라 공동체와 함께 드리는 기도", icon:"🍉", type:"수박"}]},
+  {q:"밤중에 친구가 찾아와 \"떡을 빌려 달라\"고 한다면, 나는 어떤 사람에 가까울까?", opts:[
+    {t:"피곤해도 필요한 것을 챙겨주려고 한다", icon:"🍠", type:"참외"},
+    {t:"먼저 그 친구가 얼마나 곤란했을지 마음을 헤아린다", icon:"🍑", type:"복숭아"},
+    {t:"망설이지만 결국 용기 내어 일어나 돕는다", icon:"🍍", type:"파인애플"},
+    {t:"갑작스러운 상황에도 차분하게 반응하려고 한다", icon:"🍈", type:"멜론"},
+    {t:"이 일을 통해 내가 더 넓은 사람이 되어야겠다고 느낀다", icon:"🍋", type:"레몬"}]},
+  {q:"하나님을 \"하늘 아버지\"라고 부를 때 가장 마음에 남는 이미지는?", opts:[
+    {t:"내 마음을 외면하지 않고 안아주시는 아버지", icon:"🍑", type:"복숭아"},
+    {t:"불안한 나를 평안하게 붙들어주시는 아버지", icon:"🍈", type:"멜론"},
+    {t:"내 연약함까지 아시기에 솔직히 나아갈 수 있는 아버지", icon:"🍑🟣", type:"자두"},
+    {t:"우리를 하나님의 가족으로 부르시는 아버지", icon:"🍉", type:"수박"},
+    {t:"나를 더 깊은 믿음으로 자라게 하시는 아버지", icon:"🍇", type:"포도"}]},
+  {q:"\"구하라, 찾으라, 두드리라\"는 말씀에서 나에게 가장 도전이 되는 부분은?", opts:[
+    {t:"멈춰 있던 삶을 다시 새롭게 시작하는 것", icon:"🍋", type:"레몬"},
+    {t:"하나님을 더 깊이 찾는 간절함을 갖는 것", icon:"🍇", type:"포도"},
+    {t:"내 진짜 마음을 숨기지 않고 하나님께 드리는 것", icon:"🍑🟣", type:"자두"},
+    {t:"두려워도 믿음으로 문을 두드리는 것", icon:"🍍", type:"파인애플"},
+    {t:"매일 작은 기도의 자리를 지키는 것", icon:"🍠", type:"참외"}]},
+  {q:"수련회 기도회에서 가장 오래 붙잡고 싶은 기도 제목은?", opts:[
+    {t:"하나님 앞에서 내 마음을 솔직히 열게 해주세요", icon:"🍑🟣", type:"자두"},
+    {t:"상처받은 마음들이 회복되게 해주세요", icon:"🍑", type:"복숭아"},
+    {t:"말씀과 기도 안에서 하나님을 깊이 만나게 해주세요", icon:"🍇", type:"포도"},
+    {t:"수련회 이후에도 진짜 변화된 삶을 살게 해주세요", icon:"🍋", type:"레몬"},
+    {t:"불안한 마음 대신 하나님이 주시는 평안을 주세요", icon:"🍈", type:"멜론"}]},
+  {q:"조별 나눔 시간에 한 친구가 힘든 이야기를 꺼냈다. 나는?", opts:[
+    {t:"그 친구의 마음을 깊이 공감하며 들어준다", icon:"🍑", type:"복숭아"},
+    {t:"조 분위기가 너무 무거워지지 않도록 편안하게 만든다", icon:"🍈", type:"멜론"},
+    {t:"이후에도 필요한 것이 없는지 조용히 챙기고 싶다", icon:"🍠", type:"참외"},
+    {t:"모두가 따뜻하게 반응할 수 있도록 분위기를 만든다", icon:"🍉", type:"수박"},
+    {t:"나도 내 이야기를 조금 더 솔직하게 나누고 싶어진다", icon:"🍑🟣", type:"자두"}]},
+  {q:"말씀을 듣고 마음에 찔림이 왔다. 그다음 내 반응은?", opts:[
+    {t:"그 말씀을 오래 붙잡고 조용히 묵상하고 싶다", icon:"🍇", type:"포도"},
+    {t:"이제는 정말 달라져야겠다고 결단한다", icon:"🍋", type:"레몬"},
+    {t:"이 말씀을 누군가에게 용기 있게 나누고 싶다", icon:"🍍", type:"파인애플"},
+    {t:"작아 보여도 오늘 실천할 한 가지를 정한다", icon:"🍠", type:"참외"},
+    {t:"조원들과 받은 은혜를 함께 나누고 싶다", icon:"🍉", type:"수박"}]},
+  {q:"조 안에서 의견이 갈리고 분위기가 어색해졌다. 나는?", opts:[
+    {t:"감정이 커지지 않도록 차분하게 분위기를 가라앉힌다", icon:"🍈", type:"멜론"},
+    {t:"내 생각과 불편했던 마음을 솔직하지만 조심스럽게 말한다", icon:"🍑🟣", type:"자두"},
+    {t:"다 같이 다시 웃을 수 있도록 연결점을 찾는다", icon:"🍉", type:"수박"},
+    {t:"상처받은 사람이 없는지 먼저 살핀다", icon:"🍑", type:"복숭아"},
+    {t:"필요한 말이라면 용기 내어 바른 방향을 제안한다", icon:"🍍", type:"파인애플"}]},
+  {q:"일정이 길어지고 모두가 지쳐 있다. 나는?", opts:[
+    {t:"말없이 필요한 일을 챙기고 도와준다", icon:"🍠", type:"참외"},
+    {t:"같이 웃을 수 있는 말을 하며 분위기를 살린다", icon:"🍉", type:"수박"},
+    {t:"힘들어 보이는 친구에게 조용히 다가간다", icon:"🍑", type:"복숭아"},
+    {t:"예민해진 마음을 가라앉히려고 노력한다", icon:"🍈", type:"멜론"},
+    {t:"힘들어도 이 시간을 통해 내가 자라길 기대한다", icon:"🍋", type:"레몬"}]},
+  {q:"예수님이 내게 \"너는 지금 아버지께 무엇을 구하고 싶니?\"라고 물으신다면?", opts:[
+    {t:"하나님을 더 깊이 사랑하고 알고 싶어요", icon:"🍇", type:"포도"},
+    {t:"제 마음을 숨기지 않고 주님께 드리고 싶어요", icon:"🍑🟣", type:"자두"},
+    {t:"제 삶의 오래된 습관이 새로워졌으면 좋겠어요", icon:"🍋", type:"레몬"},
+    {t:"상처 입은 마음을 회복시켜 주세요", icon:"🍑", type:"복숭아"},
+    {t:"믿음을 부끄러워하지 않는 용기를 주세요", icon:"🍍", type:"파인애플"}]},
+  {q:"성령님이 내 일상에 오셔서 가장 먼저 만져주셨으면 하는 부분은?", opts:[
+    {t:"걱정과 불안으로 흔들리는 마음", icon:"🍈", type:"멜론"},
+    {t:"사람들과 거리 두고 싶어지는 마음", icon:"🍉", type:"수박"},
+    {t:"누군가의 아픔을 지나쳐버리는 무심함", icon:"🍑", type:"복숭아"},
+    {t:"바꾸고 싶지만 계속 미루는 습관", icon:"🍋", type:"레몬"},
+    {t:"맡은 일을 쉽게 포기하고 싶은 마음", icon:"🍠", type:"참외"}]},
+  {q:"기도했는데 아직 문이 열리지 않는 것처럼 느껴질 때, 나는 어떤 은혜가 필요할까?", opts:[
+    {t:"기다림 속에서도 말씀을 붙잡는 은혜", icon:"🍇", type:"포도"},
+    {t:"다시 문을 두드릴 수 있는 믿음의 용기", icon:"🍍", type:"파인애플"},
+    {t:"답답한 마음을 하나님께 솔직히 말하는 은혜", icon:"🍑🟣", type:"자두"},
+    {t:"조급함 대신 평안을 붙드는 은혜", icon:"🍈", type:"멜론"},
+    {t:"혼자 버티지 않고 함께 기도하는 은혜", icon:"🍉", type:"수박"}]},
+  {q:"수련회에서 받은 은혜를 집에 돌아가서 이어간다면, 가장 해보고 싶은 것은?", opts:[
+    {t:"용기 내어 내가 받은 은혜를 누군가에게 나누기", icon:"🍍", type:"파인애플"},
+    {t:"힘들어 보이는 친구에게 먼저 안부 묻기", icon:"🍑", type:"복숭아"},
+    {t:"말씀 노트나 기도 제목을 다시 읽으며 묵상하기", icon:"🍇", type:"포도"},
+    {t:"바꾸고 싶은 습관 하나를 정해서 실천하기", icon:"🍋", type:"레몬"},
+    {t:"예배, 섬김, 약속 같은 기본을 꾸준히 지키기", icon:"🍠", type:"참외"}]},
+  {q:"이번 수련회가 끝난 뒤, 하나님께 이런 사람으로 자라게 해달라고 기도하고 싶다.", opts:[
+    {t:"두려워도 믿음으로 한 걸음 내딛는 사람", icon:"🍍", type:"파인애플"},
+    {t:"어떤 상황에서도 하나님 안에서 평안을 잃지 않는 사람", icon:"🍈", type:"멜론"},
+    {t:"하나님 앞에서 가식 없이 진실한 사람", icon:"🍑🟣", type:"자두"},
+    {t:"말씀과 기도 안에 깊이 뿌리내린 사람", icon:"🍇", type:"포도"},
+    {t:"작은 자리도 귀하게 여기며 끝까지 섬기는 사람", icon:"🍠", type:"참외"}]}
 ];
 
 const results = {
-  A: {name:"인싸 친화형", emoji:"🤝", color:"linear-gradient(135deg, #ff8a65, #ff6f43)",
-      desc:"새로운 사람에게 먼저 다가가고 관계를 만드는 데 진심인 당신! 이번 수련회에서 가장 많은 친구를 사귈 사람입니다.",
-      tag:"섬김 & 진행팀 추천"},
-  B: {name:"흥부자 무드메이커형", emoji:"🎉", color:"linear-gradient(135deg, #ffb347, #ff9a3d)",
-      desc:"분위기를 띄우고 추억을 기록하는 당신! 어디서든 에너지를 불어넣는 수련회의 활력소입니다.",
-      tag:"방송·사진팀 추천"},
-  C: {name:"감성 깊은 묵상형", emoji:"🌙", color:"linear-gradient(135deg, #9b8cf2, #7d6ce8)",
-      desc:"조용히 듣고 깊이 느끼는 당신! 말씀과 찬양 속에서 가장 깊은 은혜를 받는 타입입니다.",
-      tag:"말씀 묵상 & 섬김팀 추천"},
-  D: {name:"열정 찬양러형", emoji:"🎤", color:"linear-gradient(135deg, #4fc3a1, #2fa888)",
-      desc:"누구보다 크게 찬양하고 무대를 즐기는 당신! 모두를 찬양의 자리로 이끄는 리더입니다.",
-      tag:"찬양팀 추천"}
+  수박: {name:"수박형", title:"함께할 때 은혜가 커지는 사람", emoji:"🍉", color:"linear-gradient(135deg, #e8524a, #c0392b)",
+    desc:"공동체 안에서 기쁨이 넘치고 사람들과 연결될 때 가장 활기찬 당신. 함께하는 은혜가 자라고 있어요.",
+    keyword:"공동체 · 기쁨 · 연결"},
+  복숭아: {name:"복숭아형", title:"마음을 따뜻하게 위로하는 사람", emoji:"🍑", color:"linear-gradient(135deg, #f0a070, #e07040)",
+    desc:"누군가의 아픔에 먼저 다가가고 따뜻하게 안아주는 당신. 위로하는 은혜가 자라고 있어요.",
+    keyword:"공감 · 회복 · 따뜻함"},
+  포도: {name:"포도형", title:"말씀 안에서 깊어지는 사람", emoji:"🍇", color:"linear-gradient(135deg, #7d6ce8, #5a4ab8)",
+    desc:"조용히 말씀을 붙잡고 기도 안에서 하나님을 더 알아가는 당신. 깊어지는 은혜가 자라고 있어요.",
+    keyword:"말씀 · 기도 · 묵상"},
+  레몬: {name:"레몬형", title:"새롭게 변화되기를 갈망하는 사람", emoji:"🍋", color:"linear-gradient(135deg, #e8c840, #c8a010)",
+    desc:"현재에 머물지 않고 더 나은 모습으로 변화되길 원하는 당신. 새로워지는 은혜가 자라고 있어요.",
+    keyword:"결단 · 변화 · 도전"},
+  참외: {name:"참외형", title:"보이지 않는 자리도 지키는 사람", emoji:"🍈", color:"linear-gradient(135deg, #88c840, #60a010)",
+    desc:"누가 보지 않아도 묵묵히 섬기고 맡은 자리를 지키는 당신. 섬기는 은혜가 자라고 있어요.",
+    keyword:"책임감 · 신실함 · 조용한 섬김"},
+  자두: {name:"자두형", title:"하나님 앞에 솔직해지는 사람", emoji:"🫐", color:"linear-gradient(135deg, #9b5ea0, #703080)",
+    desc:"꾸미지 않고 진심으로 하나님 앞에 나아가는 당신. 솔직해지는 은혜가 자라고 있어요.",
+    keyword:"고백 · 회개 · 진심"},
+  멜론: {name:"멜론형", title:"평안으로 분위기를 감싸는 사람", emoji:"🍈", color:"linear-gradient(135deg, #60c878, #30a050)",
+    desc:"흔들리는 상황에서도 평안을 붙드는 당신. 평안해지는 은혜가 자라고 있어요.",
+    keyword:"쉼 · 안정 · 화평"},
+  파인애플: {name:"파인애플형", title:"받은 은혜를 담대히 살아내는 사람", emoji:"🍍", color:"linear-gradient(135deg, #e8a020, #c07000)",
+    desc:"두려워도 믿음으로 한 걸음 내딛고 은혜를 삶으로 증거하는 당신. 담대해지는 은혜가 자라고 있어요.",
+    keyword:"용기 · 실천 · 증거"}
 };
+
+const TYPES = ['수박','복숭아','포도','레몬','참외','자두','멜론','파인애플'];
 
 let screen = 'intro';
 let current = 0;
-const scores = {A:0,B:0,C:0,D:0};
+const scores = {수박:0,복숭아:0,포도:0,레몬:0,참외:0,자두:0,멜론:0,파인애플:0};
 const answers = new Array(questions.length).fill(null);
 const root = document.getElementById('root');
 
@@ -665,10 +762,12 @@ async function buildCompositeImage(){
     ctx.drawImage(img, 0, 0, W, H);
   }
 
-  await drawFull(outfit.hair);
+  const hairIsFront = outfit.hair && outfit.hair.zone === 'front';
+  if (!hairIsFront) await drawFull(outfit.hair);
   await drawFull({file: bodyFileState});
   await drawFull(outfit.bangs);
   await drawFull({file: faceFileState});
+  if (hairIsFront) await drawFull(outfit.hair);
   await drawFull(outfit.shoes);
   await drawFull(outfit.bottom);
   await drawFull(outfit.top);
@@ -677,11 +776,11 @@ async function buildCompositeImage(){
   const r = results[resultType];
   ctx.textAlign = 'center';
   ctx.fillStyle = '#7a4a1f';
-  ctx.font = 'bold 38px "Apple SD Gothic Neo", "Noto Sans KR", sans-serif';
-  ctx.fillText('2026 HMM 수련회', W / 2, 64);
-  ctx.font = 'bold 28px "Apple SD Gothic Neo", "Noto Sans KR", sans-serif';
+  ctx.font = 'bold 36px "Apple SD Gothic Neo", "Noto Sans KR", sans-serif';
+  ctx.fillText('2026 HMM 수련회', W / 2, 58);
+  ctx.font = 'bold 26px "Apple SD Gothic Neo", "Noto Sans KR", sans-serif';
   ctx.fillStyle = '#ff7a3d';
-  ctx.fillText(`${r.name} 코디 완성! 🎉`, W / 2, 104);
+  ctx.fillText(`${r.emoji} ${r.name} — ${r.title}`, W / 2, 96);
 
   return canvas;
 }
@@ -739,6 +838,7 @@ async function shareCompositeImage(){
 const outfitCategories = [
   {key:'hair', label:'머리', icon:'💇'},
   {key:'bangs', label:'앞머리', icon:'✂️'},
+  {key:'face', label:'표정', icon:'🙂'},
   {key:'skin', label:'피부', icon:'🤚'},
   {key:'eyes', label:'눈동자', icon:'👁️'},
   {key:'top', label:'상의', icon:'👕'},
@@ -878,17 +978,30 @@ const skinColorPresets = [
 
 // 기본(고정) 레이어이지만 색이 바뀌면 data URL로 교체되는 상태
 let bodyFileState = 'body.png';
-let faceFileState = 'face.png';
+let faceFileState = 'face/face_default.png';
 // ===== 색상 변경 끝 =====
 
-// 머리(뒷머리, 맨 뒤 레이어)
+// 머리: zone 'back'=캐릭터보다 뒤, 'front'=표정보다 앞(뱅 형태로 그려진 스타일)
 const hairItemsList = [
-  {name:'긴 생머리', file:'hair/hair_long.png'}
+  {name:'긴 생머리', file:'hair/hair_long.png', zone:'back'},
+  {name:'롱 스트레이트', file:'hair/hair_long_straight.png', zone:'back'},
+  {name:'볼륨 단발', file:'hair/hair_bowl_round.png', zone:'back'},
+  {name:'웨이브 단발', file:'hair/hair_wavy_center.png', zone:'front'},
+  {name:'사이드 스윕', file:'hair/hair_side_swoop.png', zone:'front'},
+  {name:'숏 프린지', file:'hair/hair_short_fringe.png', zone:'front'},
+  {name:'스파이키', file:'hair/hair_spiky.png', zone:'front'}
 ];
 
 // 앞머리(표정보다 앞 레이어)
 const bangsItemsList = [
-  {name:'단발 앞머리', file:'bangs/bangs_bob.png'}
+  {name:'단발 앞머리', file:'bangs/bangs_bob.png'},
+  {name:'스왑 앞머리', file:'bangs/bangs_swoop.png'}
+];
+
+// 표정 (얼굴 베이스 자체를 교체)
+const faceItemsList = [
+  {name:'기본 표정', file:'face/face_default.png'},
+  {name:'미소', file:'face/face_smile.png'}
 ];
 
 const outfitItems = {
@@ -897,39 +1010,62 @@ const outfitItems = {
     {name:'네이비 반팔티', file:'top/top_navy.png'}
   ],
   bottom: [
-    {name:'블랙 슬랙스', file:'bottom/pants_black.png'}
+    {name:'블랙 슬랙스', file:'bottom/pants_black.png'},
+    {name:'카고 팬츠', file:'bottom/pants_cargo_tan.png'}
   ],
   shoes: [
     {name:'화이트 스니커즈', file:'shoes/shoes_sneaker.png'}
   ],
   item: [
     {name:'안경', file:'item/glasses.png'},
+    {name:'캣아이 선글라스', file:'item/glasses_cateye.png'},
     {name:'캠프 모자', file:'item/cap.png'},
     {name:'텀블러', file:'item/tumbler.png'},
-    {name:'성경책', file:'item/bible.png'}
+    {name:'성경책', file:'item/bible.png'},
+    {name:'잔머리', file:'item/hair_strand.png'}
   ]
 };
 
-let outfit = {hair:null, bangs:null, top:null, bottom:null, shoes:null, item:null};
+let outfit = {hair:null, bangs:null, face:null, top:null, bottom:null, shoes:null, item:null};
 let activeCategory = 'hair';
 let resultType = 'A';
 let hairBaseFile = null;   // 색상 변경의 기준이 되는 원본 머리 PNG 경로
 let bangsBaseFile = null;  // 색상 변경의 기준이 되는 원본 앞머리 PNG 경로
 
 function renderResult(){
-  let top = 'A';
-  Object.keys(scores).forEach(k => { if (scores[k] > scores[top]) top = k; });
-  resultType = top;
-  const r = results[top];
+  // 1위 유형 찾기
+  let topScore = 0;
+  TYPES.forEach(k => { if (scores[k] > topScore) topScore = scores[k]; });
+  const tops = TYPES.filter(k => scores[k] === topScore);
+  resultType = tops[0];
+  const r = results[tops[0]];
+
+  // 동점 처리 (두 유형)
+  const isDual = tops.length >= 2;
+  const r2 = isDual ? results[tops[1]] : null;
+
+  const dualDesc = isDual
+    ? `<p class="result-label" style="margin-top:12px;">두 가지 은혜가 함께 자라고 있어요</p>
+       <p class="result-desc">${r.name}의 <b>${r.keyword}</b>과<br>${r2.name}의 <b>${r2.keyword}</b>이 함께 자라고 있는 사람</p>`
+    : '';
+
   root.innerHTML = `
-    <h1>완성! 나의 수련회 캐릭터 & 결과</h1>
-    <p class="sub">코디한 캐릭터와 유형 테스트 결과예요</p>
+    <h1>나의 수련회 캐릭터 & 은혜 유형</h1>
+    <p class="sub">코디한 캐릭터와 은혜 유형 결과예요</p>
     ${stageHTML()}
+    <p class="result-notice">이 테스트는 당신을 단정하기 위한 것이 아닙니다.<br>지금 내 안에 어떤 은혜를 더 구하면 좋을지<br>발견하는 마음으로 받아보세요 🌱</p>
     <div class="result-box" style="background:${r.color}">
-      <p class="result-label">당신의 수련회 유형은</p>
-      <p class="result-name">${r.name}</p>
+      <p class="result-label">당신의 은혜 유형은</p>
+      <p class="result-name">${r.emoji} ${r.name}</p>
+      <p class="result-title">${r.title}</p>
       <p class="result-desc">${r.desc}</p>
-      <span class="result-tag">${r.tag}</span>
+      <span class="result-tag">${r.keyword}</span>
+      ${dualDesc}
+    </div>
+    <div class="verse-box">
+      <p class="verse-text">"너희가 악할지라도 좋은 것을 자식에게 줄 줄 알거든<br>하물며 너희 하늘 아버지께서 구하는 자에게<br>성령을 주시지 않겠느냐"</p>
+      <p class="verse-ref">누가복음 11장 13절</p>
+      <p class="verse-footer">하나님 아버지께 오늘도 성령님을 구해보세요.</p>
     </div>
     <button class="start-btn" id="share-image-btn">📷 캐릭터+결과 이미지로 공유하기</button>
     <button class="retry-btn" id="save-image-btn">💾 이미지 저장</button>
@@ -938,31 +1074,28 @@ function renderResult(){
     <button class="back-btn" id="edit-outfit">👕 코디 다시 하기</button>
     <button class="back-btn" id="restart-all">🔄 처음부터 다시</button>
   `;
-  bindShareRow(`나는 "${r.name}"! 코디까지 완성했어 🎉`, '너도 코디하고 유형 테스트 해볼래?');
+  bindShareRow(`나는 "${r.name}"! 코디까지 완성했어 🎉`, '너도 코디하고 은혜 유형 테스트 해볼래?');
   document.getElementById('share-image-btn').onclick = () => shareCompositeImage();
   document.getElementById('save-image-btn').onclick = () => saveCompositeImage();
-  document.getElementById('edit-outfit').onclick = () => {
-    screen = 'dressup';
-    render();
-  };
+  document.getElementById('edit-outfit').onclick = () => { screen = 'dressup'; render(); };
   document.getElementById('restart-all').onclick = () => {
     screen = 'intro';
     current = 0;
     Object.keys(scores).forEach(k => scores[k] = 0);
     answers.fill(null);
     outfit = {hair:null, bangs:null, top:null, bottom:null, shoes:null, item:null};
-    hairBaseFile = null;
-    bangsBaseFile = null;
+    hairBaseFile = null; bangsBaseFile = null;
     bodyFileState = 'body.png';
-    faceFileState = 'face.png';
+    faceFileState = 'face/face_default.png';
     render();
   };
 }
 
 function stageHTML(){
+  const hairZ = (outfit.hair && outfit.hair.zone === 'front') ? 4.5 : 1;
   return `
     <div class="dressup-stage">
-      ${outfit.hair ? `<img class="stage-full" src="${resolveSrc(outfit.hair)}" alt="${outfit.hair.name}" style="z-index:1;" />` : ''}
+      ${outfit.hair ? `<img class="stage-full" src="${resolveSrc(outfit.hair)}" alt="${outfit.hair.name}" style="z-index:${hairZ};" />` : ''}
       <img class="stage-full" src="${resolveSrc({file: bodyFileState})}" alt="캐릭터" style="z-index:2;" />
       ${outfit.bangs ? `<img class="stage-full" src="${resolveSrc(outfit.bangs)}" alt="${outfit.bangs.name}" style="z-index:3;" />` : ''}
       <img class="stage-full" src="${resolveSrc({file: faceFileState})}" alt="얼굴" style="z-index:4;" />
@@ -977,6 +1110,7 @@ function stageHTML(){
 function getActiveList(){
   if (activeCategory === 'hair') return hairItemsList;
   if (activeCategory === 'bangs') return bangsItemsList;
+  if (activeCategory === 'face') return faceItemsList;
   return outfitItems[activeCategory];
 }
 
@@ -984,7 +1118,7 @@ function renderDressup(){
   root.innerHTML = `
     <div class="top-emoji">👗</div>
     <h1>나만의 수련회 코디 완성하기</h1>
-    <p class="sub">머리·앞머리·피부·눈동자·상의·하의·아이템을 골라보세요</p>
+    <p class="sub">머리·앞머리·표정·피부·눈동자·상의·하의·아이템을 골라보세요</p>
     ${stageHTML()}
     <div class="tabs" id="tabs"></div>
     <div class="item-grid" id="items"></div>
@@ -1002,13 +1136,16 @@ function renderDressup(){
 
   const itemsWrap = root.querySelector('#items');
   const isColorOnlyCategory = (activeCategory === 'skin' || activeCategory === 'eyes');
+  const isFaceCategory = (activeCategory === 'face');
 
   if (!isColorOnlyCategory) {
-    const noneBtn = document.createElement('button');
-    noneBtn.className = 'item-btn item-none' + (!outfit[activeCategory] ? ' item-selected' : '');
-    noneBtn.innerHTML = `<span>➖</span><span>선택 안함</span>`;
-    noneBtn.onclick = () => { outfit[activeCategory] = null; renderDressup(); };
-    itemsWrap.appendChild(noneBtn);
+    if (!isFaceCategory) {
+      const noneBtn = document.createElement('button');
+      noneBtn.className = 'item-btn item-none' + (!outfit[activeCategory] ? ' item-selected' : '');
+      noneBtn.innerHTML = `<span>➖</span><span>선택 안함</span>`;
+      noneBtn.onclick = () => { outfit[activeCategory] = null; renderDressup(); };
+      itemsWrap.appendChild(noneBtn);
+    }
 
     getActiveList().forEach(item => {
       const selected = outfit[activeCategory] && outfit[activeCategory].name === item.name;
@@ -1019,6 +1156,7 @@ function renderDressup(){
         outfit[activeCategory] = item;
         if (activeCategory === 'hair') hairBaseFile = item.file;
         if (activeCategory === 'bangs') bangsBaseFile = item.file;
+        if (activeCategory === 'face') faceFileState = item.file;
         renderDressup();
       };
       itemsWrap.appendChild(ib);
@@ -1029,10 +1167,10 @@ function renderDressup(){
 
   // 색상 변경 UI: 머리/앞머리(아이템 선택 후) + 피부/눈동자(항상)
   const colorConfig = {
-    hair:  { presets: hairColorPresets,  defaultHex: '#a87752', getBase: () => hairBaseFile,  setResult: (dataUrl, presetName) => { outfit.hair = { name: `${getActiveList().find(i=>i.file===hairBaseFile)?.name || '머리'} (${presetName})`, file: dataUrl }; } },
+    hair:  { presets: hairColorPresets,  defaultHex: '#a87752', getBase: () => hairBaseFile,  setResult: (dataUrl, presetName) => { const base = hairItemsList.find(i=>i.file===hairBaseFile); outfit.hair = { name: `${base?.name || '머리'} (${presetName})`, file: dataUrl, zone: base?.zone || 'back' }; } },
     bangs: { presets: hairColorPresets,  defaultHex: '#a87752', getBase: () => bangsBaseFile, setResult: (dataUrl, presetName) => { outfit.bangs = { name: `${getActiveList().find(i=>i.file===bangsBaseFile)?.name || '앞머리'} (${presetName})`, file: dataUrl }; } },
     skin:  { presets: skinColorPresets,  defaultHex: '#fee9d9', getBase: () => 'body.png',    setResult: (dataUrl) => { bodyFileState = dataUrl; } },
-    eyes:  { presets: eyeColorPresets,   defaultHex: '#452f1e', getBase: () => 'face.png',    setResult: (dataUrl) => { faceFileState = dataUrl; } }
+    eyes:  { presets: eyeColorPresets,   defaultHex: '#452f1e', getBase: () => faceFileState, setResult: (dataUrl) => { faceFileState = dataUrl; } }
   };
 
   if (colorConfig[activeCategory]) {
