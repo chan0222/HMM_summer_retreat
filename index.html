@@ -771,7 +771,7 @@ async function buildCompositeImage(){
   await drawFull(outfit.shoes);
   await drawFull(outfit.bottom);
   await drawFull(outfit.top);
-  await drawFull(outfit.item);
+  for (const it of outfit.items) await drawFull(it);
 
   const r = results[resultType];
   ctx.textAlign = 'center';
@@ -1017,8 +1017,8 @@ const outfitItems = {
     {name:'화이트 스니커즈', file:'shoes/shoes_sneaker.png'}
   ],
   item: [
-    {name:'안경', file:'item/glasses.png'},
-    {name:'캣아이 선글라스', file:'item/glasses_cateye.png'},
+    {name:'안경', file:'item/glasses.png', group:'eyewear'},
+    {name:'캣아이 선글라스', file:'item/glasses_cateye.png', group:'eyewear'},
     {name:'캠프 모자', file:'item/cap.png'},
     {name:'텀블러', file:'item/tumbler.png'},
     {name:'성경책', file:'item/bible.png'},
@@ -1026,7 +1026,7 @@ const outfitItems = {
   ]
 };
 
-let outfit = {hair:null, bangs:null, face:null, top:null, bottom:null, shoes:null, item:null};
+let outfit = {hair:null, bangs:null, face:null, top:null, bottom:null, shoes:null, items:[]};
 let activeCategory = 'hair';
 let resultType = 'A';
 let hairBaseFile = null;   // 색상 변경의 기준이 되는 원본 머리 PNG 경로
@@ -1083,7 +1083,7 @@ function renderResult(){
     current = 0;
     Object.keys(scores).forEach(k => scores[k] = 0);
     answers.fill(null);
-    outfit = {hair:null, bangs:null, top:null, bottom:null, shoes:null, item:null};
+    outfit = {hair:null, bangs:null, top:null, bottom:null, shoes:null, items:[]};
     hairBaseFile = null; bangsBaseFile = null;
     bodyFileState = 'body.png';
     faceFileState = 'face/face_default.png';
@@ -1102,7 +1102,7 @@ function stageHTML(){
       ${outfit.shoes ? `<img class="stage-full" src="${resolveSrc(outfit.shoes)}" alt="${outfit.shoes.name}" style="z-index:5;" />` : ''}
       ${outfit.bottom ? `<img class="stage-full" src="${resolveSrc(outfit.bottom)}" alt="${outfit.bottom.name}" style="z-index:6;" />` : ''}
       ${outfit.top ? `<img class="stage-full" src="${resolveSrc(outfit.top)}" alt="${outfit.top.name}" style="z-index:7;" />` : ''}
-      ${outfit.item ? `<img class="stage-full" src="${resolveSrc(outfit.item)}" alt="${outfit.item.name}" style="z-index:8;" />` : ''}
+      ${outfit.items.map(it => `<img class="stage-full" src="${resolveSrc(it)}" alt="${it.name}" style="z-index:8;" />`).join('')}
     </div>
   `;
 }
@@ -1137,9 +1137,10 @@ function renderDressup(){
   const itemsWrap = root.querySelector('#items');
   const isColorOnlyCategory = (activeCategory === 'skin' || activeCategory === 'eyes');
   const isFaceCategory = (activeCategory === 'face');
+  const isItemCategory = (activeCategory === 'item');
 
   if (!isColorOnlyCategory) {
-    if (!isFaceCategory) {
+    if (!isFaceCategory && !isItemCategory) {
       const noneBtn = document.createElement('button');
       noneBtn.className = 'item-btn item-none' + (!outfit[activeCategory] ? ' item-selected' : '');
       noneBtn.innerHTML = `<span>➖</span><span>선택 안함</span>`;
@@ -1147,20 +1148,51 @@ function renderDressup(){
       itemsWrap.appendChild(noneBtn);
     }
 
-    getActiveList().forEach(item => {
-      const selected = outfit[activeCategory] && outfit[activeCategory].name === item.name;
-      const ib = document.createElement('button');
-      ib.className = 'item-btn' + (selected ? ' item-selected' : '');
-      ib.innerHTML = `<img src="${resolveSrc(item)}" alt="${item.name}" /><span>${item.name}</span>`;
-      ib.onclick = () => {
-        outfit[activeCategory] = item;
-        if (activeCategory === 'hair') hairBaseFile = item.file;
-        if (activeCategory === 'bangs') bangsBaseFile = item.file;
-        if (activeCategory === 'face') faceFileState = item.file;
-        renderDressup();
-      };
-      itemsWrap.appendChild(ib);
-    });
+    if (isItemCategory) {
+      // 아이템: 다중 선택 — 같은 group끼리는 교체, 다른 group은 자유롭게 추가/제거
+      const clearBtn = document.createElement('button');
+      clearBtn.className = 'item-btn item-none' + (outfit.items.length === 0 ? ' item-selected' : '');
+      clearBtn.innerHTML = `<span>➖</span><span>모두 해제</span>`;
+      clearBtn.onclick = () => { outfit.items = []; renderDressup(); };
+      itemsWrap.appendChild(clearBtn);
+
+      getActiveList().forEach(item => {
+        const isSelected = outfit.items.some(i => i.name === item.name);
+        const ib = document.createElement('button');
+        ib.className = 'item-btn' + (isSelected ? ' item-selected' : '');
+        ib.innerHTML = `<img src="${resolveSrc(item)}" alt="${item.name}" /><span>${item.name}</span>`;
+        ib.onclick = () => {
+          if (isSelected) {
+            // 이미 선택된 아이템이면 해제
+            outfit.items = outfit.items.filter(i => i.name !== item.name);
+          } else if (item.group) {
+            // 같은 group의 기존 아이템 교체 후 추가
+            outfit.items = outfit.items.filter(i => i.group !== item.group);
+            outfit.items.push(item);
+          } else {
+            // group 없으면 그냥 추가
+            outfit.items.push(item);
+          }
+          renderDressup();
+        };
+        itemsWrap.appendChild(ib);
+      });
+    } else {
+      getActiveList().forEach(item => {
+        const selected = outfit[activeCategory] && outfit[activeCategory].name === item.name;
+        const ib = document.createElement('button');
+        ib.className = 'item-btn' + (selected ? ' item-selected' : '');
+        ib.innerHTML = `<img src="${resolveSrc(item)}" alt="${item.name}" /><span>${item.name}</span>`;
+        ib.onclick = () => {
+          outfit[activeCategory] = item;
+          if (activeCategory === 'hair') hairBaseFile = item.file;
+          if (activeCategory === 'bangs') bangsBaseFile = item.file;
+          if (activeCategory === 'face') faceFileState = item.file;
+          renderDressup();
+        };
+        itemsWrap.appendChild(ib);
+      });
+    }
   } else {
     itemsWrap.style.display = 'none';
   }
@@ -1263,7 +1295,7 @@ function renderQuestion(){
     const btn = document.createElement('button');
     btn.className = 'opt-btn';
     if (answers[current] === o.type) btn.classList.add('opt-selected');
-    btn.innerHTML = `<span class="opt-icon">${o.icon}</span><span>${o.t}</span>`;
+    btn.innerHTML = `<span>${o.t}</span>`;
     btn.onclick = () => {
       if (answers[current]) scores[answers[current]]--;
       scores[o.type]++;
