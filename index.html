@@ -981,23 +981,40 @@ let bodyFileState = 'body.png';
 let faceFileState = 'face/face_default.png';
 // ===== 색상 변경 끝 =====
 
-// 머리(뒷머리 — 캐릭터보다 뒤 레이어)
-const hairItemsList = [
-  {name:'긴 생머리', file:'hair/hair_long.png', zone:'back'},
-  {name:'롱 스트레이트', file:'hair/hair_long_straight.png', zone:'back'},
-  {name:'볼륨 단발', file:'hair/hair_bowl_round.png', zone:'back'},
-  {name:'잔머리', file:'item/hair_strand.png', zone:'back'}
-];
+// ===== 성별 상태 =====
+let selectedGender = null; // 'male' | 'female'
 
-// 앞머리(표정보다 앞 레이어)
-const bangsItemsList = [
-  {name:'단발 앞머리', file:'bangs/bangs_bob.png'},
-  {name:'스왑 앞머리', file:'bangs/bangs_swoop.png'},
-  {name:'웨이브 단발', file:'hair/hair_wavy_center.png'},
-  {name:'사이드 스윕', file:'hair/hair_side_swoop.png'},
-  {name:'숏 프린지', file:'hair/hair_short_fringe.png'},
-  {name:'스파이키', file:'hair/hair_spiky.png'}
-];
+// 머리(뒷머리) — 성별별
+const hairItemsByGender = {
+  female: [
+    {name:'긴 생머리', file:'hair/hair_long.png', zone:'back'},
+    {name:'롱 스트레이트', file:'hair/hair_long_straight.png', zone:'back'},
+    {name:'볼륨 단발', file:'hair/hair_bowl_round.png', zone:'back'},
+    {name:'잔머리', file:'item/hair_strand.png', zone:'back'}
+  ],
+  male: [
+    {name:'숏 프린지', file:'hair/hair_short_fringe.png', zone:'back'},
+    {name:'스파이키', file:'hair/hair_spiky.png', zone:'back'}
+  ]
+};
+
+// 앞머리 — 성별별
+const bangsItemsByGender = {
+  female: [
+    {name:'단발 앞머리', file:'bangs/bangs_bob.png'},
+    {name:'스왑 앞머리', file:'bangs/bangs_swoop.png'},
+    {name:'웨이브 단발', file:'hair/hair_wavy_center.png'},
+    {name:'사이드 스윕', file:'hair/hair_side_swoop.png'}
+  ],
+  male: [
+    {name:'사이드 스윕', file:'hair/hair_side_swoop.png'},
+    {name:'스파이키 앞머리', file:'bangs/bangs_swoop.png'}
+  ]
+};
+
+// 현재 성별 기준 리스트 (getter)
+function getHairItemsList(){ return hairItemsByGender[selectedGender] || hairItemsByGender.female; }
+function getBangsItemsList(){ return bangsItemsByGender[selectedGender] || bangsItemsByGender.female; }
 
 // 표정 (얼굴 베이스 자체를 교체)
 const faceItemsList = [
@@ -1008,29 +1025,42 @@ const faceItemsList = [
 const outfitItems = {
   top: [
     {name:'화이트 반팔티', file:'top/top_white.png'},
-    {name:'네이비 반팔티', file:'top/top_navy.png'}
+    {name:'네이비 반팔티', file:'top/top_navy.png'},
+    {name:'HMM 네이비 숏', file:'top/top_hmm_navy_short.png'},
+    {name:'HMM 화이트 숏', file:'top/top_hmm_white_short.png'},
+    {name:'HMM 네이비 롱', file:'top/top_hmm_navy_long.png'},
+    {name:'HMM 화이트 롱', file:'top/top_hmm_white_long.png'},
+    {name:'LWLF 버건디 롱', file:'top/top_lwlf_burgundy_long.png'},
+    {name:'LWLF 버건디 숏', file:'top/top_lwlf_burgundy_short.png'}
   ],
   bottom: [
     {name:'블랙 슬랙스', file:'bottom/pants_black.png'},
-    {name:'카고 팬츠', file:'bottom/pants_cargo_tan.png'}
+    {name:'카고 팬츠', file:'bottom/pants_cargo_tan.png'},
+    {name:'블랙 반바지', file:'bottom/shorts_black.png'},
+    {name:'블루 데님', file:'bottom/pants_denim_blue.png'},
+    {name:'플로럴 팬츠', file:'bottom/pants_floral.png'},
+    {name:'미니스커트', file:'bottom/skirt_mini_blue.png'}
   ],
   shoes: [
     {name:'화이트 스니커즈', file:'shoes/shoes_sneaker.png'}
   ],
   item: [
     {name:'안경', file:'item/glasses.png', group:'eyewear'},
+    {name:'반달 안경', file:'item/glasses_halfmoon.png', group:'eyewear'},
     {name:'캣아이 선글라스', file:'item/glasses_cateye.png', group:'eyewear'},
     {name:'캠프 모자', file:'item/cap.png'},
     {name:'텀블러', file:'item/tumbler.png'},
-    {name:'성경책', file:'item/bible.png'}
+    {name:'성경책', file:'item/bible.png'},
+    {name:'튜브 (정면)', file:'item/tube.png'},
+    {name:'튜브 (기울기)', file:'item/tube_tilted.png'}
   ]
 };
 
 let outfit = {hair:null, bangs:null, face:null, top:null, bottom:null, shoes:null, items:[]};
 let activeCategory = 'hair';
 let resultType = 'A';
-let hairBaseFile = null;   // 색상 변경의 기준이 되는 원본 머리 PNG 경로
-let bangsBaseFile = null;  // 색상 변경의 기준이 되는 원본 앞머리 PNG 경로
+let hairBaseFile = null;
+let bangsBaseFile = null;
 
 function renderResult(){
   // 1위 유형 찾기
@@ -1077,10 +1107,11 @@ function renderResult(){
   bindShareRow(`나는 "${r.name}"! 코디까지 완성했어 🎉`, '너도 코디하고 은혜 유형 테스트 해볼래?');
   document.getElementById('share-image-btn').onclick = () => shareCompositeImage();
   document.getElementById('save-image-btn').onclick = () => saveCompositeImage();
-  document.getElementById('edit-outfit').onclick = () => { screen = 'dressup'; render(); };
+  document.getElementById('edit-outfit').onclick = () => { screen = 'gender'; render(); };
   document.getElementById('restart-all').onclick = () => {
     screen = 'intro';
     current = 0;
+    selectedGender = null;
     Object.keys(scores).forEach(k => scores[k] = 0);
     answers.fill(null);
     outfit = {hair:null, bangs:null, top:null, bottom:null, shoes:null, items:[]};
@@ -1108,8 +1139,8 @@ function stageHTML(){
 }
 
 function getActiveList(){
-  if (activeCategory === 'hair') return hairItemsList;
-  if (activeCategory === 'bangs') return bangsItemsList;
+  if (activeCategory === 'hair') return getHairItemsList();
+  if (activeCategory === 'bangs') return getBangsItemsList();
   if (activeCategory === 'face') return faceItemsList;
   return outfitItems[activeCategory];
 }
@@ -1199,7 +1230,7 @@ function renderDressup(){
 
   // 색상 변경 UI: 머리/앞머리(아이템 선택 후) + 피부/눈동자(항상)
   const colorConfig = {
-    hair:  { presets: hairColorPresets,  defaultHex: '#a87752', getBase: () => hairBaseFile,  setResult: (dataUrl, presetName) => { const base = hairItemsList.find(i=>i.file===hairBaseFile); outfit.hair = { name: `${base?.name || '머리'} (${presetName})`, file: dataUrl, zone: base?.zone || 'back' }; } },
+    hair:  { presets: hairColorPresets,  defaultHex: '#a87752', getBase: () => hairBaseFile,  setResult: (dataUrl, presetName) => { const base = getHairItemsList().find(i=>i.file===hairBaseFile); outfit.hair = { name: `${base?.name || '머리'} (${presetName})`, file: dataUrl, zone: base?.zone || 'back' }; } },
     bangs: { presets: hairColorPresets,  defaultHex: '#a87752', getBase: () => bangsBaseFile, setResult: (dataUrl, presetName) => { outfit.bangs = { name: `${getActiveList().find(i=>i.file===bangsBaseFile)?.name || '앞머리'} (${presetName})`, file: dataUrl }; } },
     skin:  { presets: skinColorPresets,  defaultHex: '#fee9d9', getBase: () => 'body.png',    setResult: (dataUrl) => { bodyFileState = dataUrl; } },
     eyes:  { presets: eyeColorPresets,   defaultHex: '#452f1e', getBase: () => faceFileState, setResult: (dataUrl) => { faceFileState = dataUrl; } }
@@ -1256,6 +1287,44 @@ function renderDressup(){
   };
 }
 
+function renderGender(){
+  root.innerHTML = `
+    <div class="top-emoji">🧍</div>
+    <h1>내 캐릭터 성별 선택</h1>
+    <p class="sub">어떤 캐릭터로 코디할까요?</p>
+    <div class="gender-grid">
+      <button class="gender-btn" id="g-male">
+        <span style="font-size:48px;">🧑</span>
+        <span>남자</span>
+      </button>
+      <button class="gender-btn" id="g-female">
+        <span style="font-size:48px;">👧</span>
+        <span>여자</span>
+      </button>
+    </div>
+  `;
+  document.getElementById('g-male').onclick = () => {
+    selectedGender = 'male';
+    outfit = {hair:null, bangs:null, face:null, top:null, bottom:null, shoes:null, items:[]};
+    hairBaseFile = null; bangsBaseFile = null;
+    bodyFileState = 'body.png';
+    faceFileState = 'face/face_default.png';
+    activeCategory = 'hair';
+    screen = 'dressup';
+    render();
+  };
+  document.getElementById('g-female').onclick = () => {
+    selectedGender = 'female';
+    outfit = {hair:null, bangs:null, face:null, top:null, bottom:null, shoes:null, items:[]};
+    hairBaseFile = null; bangsBaseFile = null;
+    bodyFileState = 'body.png';
+    faceFileState = 'face/face_default.png';
+    activeCategory = 'hair';
+    screen = 'dressup';
+    render();
+  };
+}
+
 function renderIntro(){
   root.innerHTML = `
     <div class="top-emoji">🌴</div>
@@ -1265,13 +1334,14 @@ function renderIntro(){
     <p class="footer-note">소요시간 약 2분</p>
   `;
   document.getElementById('start').onclick = () => {
-    screen = 'dressup';
+    screen = 'gender';
     render();
   };
 }
 
 function render(){
   if (screen === 'intro') { renderIntro(); return; }
+  if (screen === 'gender') { renderGender(); return; }
   if (screen === 'quiz') { renderQuestion(); return; }
   if (screen === 'result') { renderResult(); return; }
   if (screen === 'dressup') { renderDressup(); return; }
