@@ -835,17 +835,32 @@ async function shareCompositeImage(){
 }
 // ===== 코디 합성 이미지 생성 끝 =====
 
-const outfitCategories = [
-  {key:'hair', label:'머리', icon:'💇'},
-  {key:'bangs', label:'앞머리', icon:'✂️'},
-  {key:'face', label:'표정', icon:'🙂'},
-  {key:'skin', label:'피부', icon:'🤚'},
-  {key:'eyes', label:'눈동자', icon:'👁️'},
-  {key:'top', label:'상의', icon:'👕'},
-  {key:'bottom', label:'하의', icon:'👖'},
-  {key:'shoes', label:'신발', icon:'👟'},
-  {key:'item', label:'아이템', icon:'🎒'}
-];
+// 성별에 따라 카테고리 목록 반환 (남자는 앞머리 탭 없음)
+function getOutfitCategories(){
+  if (selectedGender === 'male') {
+    return [
+      {key:'hair',   label:'머리',   icon:'💇'},
+      {key:'face',   label:'표정',   icon:'🙂'},
+      {key:'skin',   label:'피부',   icon:'🤚'},
+      {key:'eyes',   label:'눈동자', icon:'👁️'},
+      {key:'top',    label:'상의',   icon:'👕'},
+      {key:'bottom', label:'하의',   icon:'👖'},
+      {key:'shoes',  label:'신발',   icon:'👟'},
+      {key:'item',   label:'아이템', icon:'🎒'}
+    ];
+  }
+  return [
+    {key:'hair',   label:'뒷머리', icon:'💇'},
+    {key:'bangs',  label:'앞머리', icon:'✂️'},
+    {key:'face',   label:'표정',   icon:'🙂'},
+    {key:'skin',   label:'피부',   icon:'🤚'},
+    {key:'eyes',   label:'눈동자', icon:'👁️'},
+    {key:'top',    label:'상의',   icon:'👕'},
+    {key:'bottom', label:'하의',   icon:'👖'},
+    {key:'shoes',  label:'신발',   icon:'👟'},
+    {key:'item',   label:'아이템', icon:'🎒'}
+  ];
+}
 
 const ASSET = 'assets';
 function resolveSrc(item){
@@ -1024,8 +1039,6 @@ const faceItemsList = [
 
 const outfitItems = {
   top: [
-    {name:'화이트 반팔티', file:'top/top_white.png'},
-    {name:'네이비 반팔티', file:'top/top_navy.png'},
     {name:'HMM 네이비 숏', file:'top/top_hmm_navy_short.png'},
     {name:'HMM 화이트 숏', file:'top/top_hmm_white_short.png'},
     {name:'HMM 네이비 롱', file:'top/top_hmm_navy_long.png'},
@@ -1042,11 +1055,11 @@ const outfitItems = {
     {name:'미니스커트', file:'bottom/skirt_mini_blue.png'}
   ],
   shoes: [
-    {name:'화이트 스니커즈', file:'shoes/shoes_sneaker.png'}
+    {name:'화이트 스니커즈', file:'shoes/shoes_sneaker.png'},
+    {name:'슬리퍼', file:'shoes/shoes_slipper.png'}
   ],
   item: [
     {name:'안경', file:'item/glasses.png', group:'eyewear'},
-    {name:'반달 안경', file:'item/glasses_halfmoon.png', group:'eyewear'},
     {name:'캣아이 선글라스', file:'item/glasses_cateye.png', group:'eyewear'},
     {name:'캠프 모자', file:'item/cap.png'},
     {name:'텀블러', file:'item/tumbler.png'},
@@ -1123,16 +1136,31 @@ function renderResult(){
 }
 
 function stageHTML(){
+  if (selectedGender === 'male') {
+    // 남자: 머리가 항상 몸통 앞(z-index 7 이상)에 나옴, 앞머리 개념 없음
+    return `
+      <div class="dressup-stage">
+        <img class="stage-full" src="${resolveSrc({file: bodyFileState})}" alt="캐릭터" style="z-index:1;" />
+        <img class="stage-full" src="${resolveSrc({file: faceFileState})}" alt="얼굴" style="z-index:2;" />
+        ${outfit.shoes  ? `<img class="stage-full" src="${resolveSrc(outfit.shoes)}"  alt="${outfit.shoes.name}"  style="z-index:3;" />` : ''}
+        ${outfit.bottom ? `<img class="stage-full" src="${resolveSrc(outfit.bottom)}" alt="${outfit.bottom.name}" style="z-index:4;" />` : ''}
+        ${outfit.top    ? `<img class="stage-full" src="${resolveSrc(outfit.top)}"    alt="${outfit.top.name}"    style="z-index:5;" />` : ''}
+        ${(outfit.items||[]).map(it=>`<img class="stage-full" src="${resolveSrc(it)}" alt="${it.name}" style="z-index:6;" />`).join('')}
+        ${outfit.hair   ? `<img class="stage-full" src="${resolveSrc(outfit.hair)}"   alt="${outfit.hair.name}"   style="z-index:7;" />` : ''}
+      </div>
+    `;
+  }
+  // 여자: 뒷머리(back) → 몸 → 앞머리 → 얼굴 → 신발 → 하의 → 상의 → 아이템
   const hairZ = (outfit.hair && outfit.hair.zone === 'front') ? 4.5 : 1;
   return `
     <div class="dressup-stage">
-      ${outfit.hair ? `<img class="stage-full" src="${resolveSrc(outfit.hair)}" alt="${outfit.hair.name}" style="z-index:${hairZ};" />` : ''}
+      ${outfit.hair   ? `<img class="stage-full" src="${resolveSrc(outfit.hair)}"   alt="${outfit.hair.name}"   style="z-index:${hairZ};" />` : ''}
       <img class="stage-full" src="${resolveSrc({file: bodyFileState})}" alt="캐릭터" style="z-index:2;" />
-      ${outfit.bangs ? `<img class="stage-full" src="${resolveSrc(outfit.bangs)}" alt="${outfit.bangs.name}" style="z-index:3;" />` : ''}
+      ${outfit.bangs  ? `<img class="stage-full" src="${resolveSrc(outfit.bangs)}"  alt="${outfit.bangs.name}"  style="z-index:3;" />` : ''}
       <img class="stage-full" src="${resolveSrc({file: faceFileState})}" alt="얼굴" style="z-index:4;" />
-      ${outfit.shoes ? `<img class="stage-full" src="${resolveSrc(outfit.shoes)}" alt="${outfit.shoes.name}" style="z-index:5;" />` : ''}
+      ${outfit.shoes  ? `<img class="stage-full" src="${resolveSrc(outfit.shoes)}"  alt="${outfit.shoes.name}"  style="z-index:5;" />` : ''}
       ${outfit.bottom ? `<img class="stage-full" src="${resolveSrc(outfit.bottom)}" alt="${outfit.bottom.name}" style="z-index:6;" />` : ''}
-      ${outfit.top ? `<img class="stage-full" src="${resolveSrc(outfit.top)}" alt="${outfit.top.name}" style="z-index:7;" />` : ''}
+      ${outfit.top    ? `<img class="stage-full" src="${resolveSrc(outfit.top)}"    alt="${outfit.top.name}"    style="z-index:7;" />` : ''}
       ${(outfit.items||[]).map(it=>`<img class="stage-full" src="${resolveSrc(it)}" alt="${it.name}" style="z-index:8;" />`).join('')}
     </div>
   `;
@@ -1146,18 +1174,24 @@ function getActiveList(){
 }
 
 function renderDressup(){
+  const isMale = selectedGender === 'male';
+  const subText = isMale
+    ? '머리·표정·피부·눈동자·상의·하의·신발·아이템을 골라보세요'
+    : '뒷머리·앞머리·표정·피부·눈동자·상의·하의·신발·아이템을 골라보세요';
+
   root.innerHTML = `
     <div class="top-emoji">👗</div>
     <h1>나만의 수련회 코디 완성하기</h1>
-    <p class="sub">머리·앞머리·표정·피부·눈동자·상의·하의·아이템을 골라보세요</p>
+    <p class="sub">${subText}</p>
     ${stageHTML()}
     <div class="tabs" id="tabs"></div>
     <div class="item-grid" id="items"></div>
     <button class="start-btn" id="complete-btn">코디 완성! 🎉</button>
+    <button class="back-btn" id="back-to-gender">← 성별 다시 선택</button>
   `;
 
   const tabsWrap = root.querySelector('#tabs');
-  outfitCategories.forEach(cat => {
+  getOutfitCategories().forEach(cat => {
     const tb = document.createElement('button');
     tb.className = 'tab-btn' + (activeCategory === cat.key ? ' tab-active' : '');
     tb.innerHTML = `<span>${cat.icon}</span><span>${cat.label}</span>`;
@@ -1283,6 +1317,11 @@ function renderDressup(){
     current = 0;
     Object.keys(scores).forEach(k => scores[k] = 0);
     answers.fill(null);
+    render();
+  };
+
+  document.getElementById('back-to-gender').onclick = () => {
+    screen = 'gender';
     render();
   };
 }
