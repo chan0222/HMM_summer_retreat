@@ -595,7 +595,7 @@ const results = {
   레몬: {name:"레몬형", title:"새롭게 변화되기를 갈망하는 사람", emoji:"🍋", color:"linear-gradient(135deg, #e8c840, #c8a010)",
     desc:"현재에 머물지 않고 더 나은 모습으로 변화되길 원하는 당신. 새로워지는 은혜가 자라고 있어요.",
     keyword:"결단 · 변화 · 도전"},
-  참외: {name:"참외형", title:"보이지 않는 자리도 지키는 사람", emoji:"🍈", color:"linear-gradient(135deg, #88c840, #60a010)",
+  참외: {name:"참외형", title:"보이지 않는 자리도 지키는 사람", emoji:"<img src='assets/chamoe.png' style='width:60px;height:60px;object-fit:contain;vertical-align:middle;' alt='참외' />", color:"linear-gradient(135deg, #f5c842, #e6a800)",
     desc:"누가 보지 않아도 묵묵히 섬기고 맡은 자리를 지키는 당신. 섬기는 은혜가 자라고 있어요.",
     keyword:"책임감 · 신실함 · 조용한 섬김"},
   자두: {name:"자두형", title:"하나님 앞에 솔직해지는 사람", emoji:"🫐", color:"linear-gradient(135deg, #9b5ea0, #703080)",
@@ -780,7 +780,8 @@ async function buildCompositeImage(){
   ctx.fillText('2026 HMM 수련회', W / 2, 58);
   ctx.font = 'bold 26px "Apple SD Gothic Neo", "Noto Sans KR", sans-serif';
   ctx.fillStyle = '#ff7a3d';
-  ctx.fillText(`${r.emoji} ${r.name} — ${r.title}`, W / 2, 96);
+  const emojiText = r.name === '참외형' ? '🍯' : r.emoji;
+  ctx.fillText(`${emojiText} ${r.name} — ${r.title}`, W / 2, 96);
 
   return canvas;
 }
@@ -1038,13 +1039,18 @@ const faceItemsList = [
 ];
 
 const outfitItems = {
-  top: [
+  top_female: [
     {name:'HMM 네이비 숏', file:'top/top_hmm_navy_short.png'},
     {name:'HMM 화이트 숏', file:'top/top_hmm_white_short.png'},
     {name:'HMM 네이비 롱', file:'top/top_hmm_navy_long.png'},
     {name:'HMM 화이트 롱', file:'top/top_hmm_white_long.png'},
     {name:'LWLF 버건디 롱', file:'top/top_lwlf_burgundy_long.png'},
     {name:'LWLF 버건디 숏', file:'top/top_lwlf_burgundy_short.png'}
+  ],
+  top_male: [
+    {name:'HMM 네이비', file:'top/top_hmm_navy_short.png'},
+    {name:'HMM 화이트', file:'top/top_hmm_white_short.png'},
+    {name:'LWLF 버건디', file:'top/top_lwlf_burgundy_short.png'}
   ],
   bottom: [
     {name:'블랙 슬랙스', file:'bottom/pants_black.png'},
@@ -1068,7 +1074,7 @@ const outfitItems = {
     {name:'튜브 (기울기)', file:'item/tube_tilted.png'}
   ]
 };
-
+  
 let outfit = {hair:null, bangs:null, face:null, top:null, bottom:null, shoes:null, items:[]};
 let activeCategory = 'hair';
 let resultType = 'A';
@@ -1170,6 +1176,7 @@ function getActiveList(){
   if (activeCategory === 'hair') return getHairItemsList();
   if (activeCategory === 'bangs') return getBangsItemsList();
   if (activeCategory === 'face') return faceItemsList;
+  if (activeCategory === 'top') return selectedGender === 'male' ? outfitItems.top_male : outfitItems.top_female;
   return outfitItems[activeCategory];
 }
 
@@ -1228,14 +1235,16 @@ function renderDressup(){
         ib.innerHTML = `<img src="${resolveSrc(item)}" alt="${item.name}" /><span>${item.name}</span>`;
         ib.onclick = () => {
           if (isSelected) {
-            // 이미 선택된 아이템이면 해제
             outfit.items = outfit.items.filter(i => i.name !== item.name);
           } else if (item.group) {
-            // 같은 group의 기존 아이템 교체 후 추가
+            // 같은 group의 기존 아이템 교체 (안경류)
             outfit.items = outfit.items.filter(i => i.group !== item.group);
             outfit.items.push(item);
+          } else if (item.file && item.file.startsWith('item/tube')) {
+            // 튜브는 둘 중 하나만 선택 가능
+            outfit.items = outfit.items.filter(i => !(i.file && i.file.startsWith('item/tube')));
+            outfit.items.push(item);
           } else {
-            // group 없으면 그냥 추가
             outfit.items.push(item);
           }
           renderDressup();
@@ -1346,7 +1355,7 @@ function renderGender(){
     selectedGender = 'male';
     outfit = {hair:null, bangs:null, face:null, top:null, bottom:null, shoes:null, items:[]};
     hairBaseFile = null; bangsBaseFile = null;
-    bodyFileState = 'body.png';
+    bodyFileState = 'body_male.png';
     faceFileState = 'face/face_default.png';
     activeCategory = 'hair';
     screen = 'dressup';
