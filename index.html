@@ -266,16 +266,16 @@ const HAIR_BOY = [
   { name:'앞머리5', file:'fronthair5_join.png' },
 ];
 
-// 표정
+// 표정 (noColor: 색상 커스텀 없음, eyeOnly: 눈동자만 채도 높은 픽셀 중 특정 범위만)
 const FACE_GIRL = [
   { name:'기본 표정', file:'face1_girl.png' },
-  { name:'표정2',    file:'face2_girl.png' },
-  { name:'표정3',    file:'face3_girl.png' },
+  { name:'표정2',    file:'face2_girl.png', eyeOnly:true },
+  { name:'표정3',    file:'face3_girl.png', noColor:true },
 ];
 const FACE_BOY = [
   { name:'기본 표정', file:'face1_boy.png' },
-  { name:'표정2',    file:'face2_boy.png' },
-  { name:'표정3',    file:'face3_boy.png' },
+  { name:'표정2',    file:'face2_boy.png', eyeOnly:true },
+  { name:'표정3',    file:'face3_boy.png', noColor:true },
 ];
 
 // 상의
@@ -293,20 +293,18 @@ const TOP_BOY = [
   { name:'j333티',   file:'j3_top1_boy.png'   },
 ];
 
-// 하의
+// 하의 (noColor: 색상 커스텀 제외)
 const BOTTOM_GIRL = [
   { name:'카고바지', file:'bottom1_girl.png' },
-  { name:'바지1',   file:'bottom1_join.png'  },
   { name:'바지2',   file:'bottom2_join.png'  },
-  { name:'몸빼바지', file:'bottom3_join.png'  },
+  { name:'몸빼바지', file:'bottom3_join.png', noColor:true },
   { name:'치마1',   file:'bottom2_girl.png'  },
   { name:'치마2',   file:'bottom3_girl.png'  },
 ];
 const BOTTOM_BOY = [
   { name:'카고바지', file:'bottom1_boy.png' },
-  { name:'바지1',   file:'bottom1_join.png' },
   { name:'바지2',   file:'bottom2_join.png' },
-  { name:'몸빼바지', file:'bottom3_join.png' },
+  { name:'몸빼바지', file:'bottom3_join.png', noColor:true },
 ];
 
 // 신발
@@ -439,18 +437,63 @@ async function applyFronthairColor(hex){
 }
 async function applyEyeColor(hex){
   colorState.eye = hex;
-  const faceBase = outfit.face?._baseFaceFile || outfit.face?.file || (selectedGender==='male'?'face1_boy.png':'face1_girl.png');
+  const currentFace = outfit.face;
+  const faceBase = currentFace?._baseFaceFile || currentFace?.file || (selectedGender==='male'?'face1_boy.png':'face1_girl.png');
+  const isEyeOnly = currentFace?.eyeOnly || false;
   showToast('눈동자색 바꾸는 중...');
-  const dataUrl = await selectiveRecolor(faceBase, hex, 0.06);
-  outfit.face = { ...(outfit.face||{name:'표정'}), file: dataUrl, _baseFaceFile: faceBase };
+
+  let dataUrl;
+  if (isEyeOnly) {
+    // 눈동자만: 채도 있는 픽셀 중 빨간 계열(입술) 제외
+    // 빨간 계열 = hue 0~0.08 또는 0.92~1.0 이면서 채도 높음 → 건드리지 않음
+    dataUrl = await selectiveRecolorEyeOnly(faceBase, hex);
+  } else {
+    dataUrl = await selectiveRecolor(faceBase, hex, 0.06);
+  }
+  outfit.face = { ...(currentFace||{name:'표정'}), file: dataUrl, _baseFaceFile: faceBase };
   renderDressup();
+}
+
+async function selectiveRecolorEyeOnly(filePath, targetHex){
+  const fullSrc = filePath.startsWith('data:') ? filePath : (A + filePath);
+  const baseImg = await getCachedImg(fullSrc);
+  const W = baseImg.naturalWidth||900, H = baseImg.naturalHeight||900;
+  const canvas = document.createElement('canvas'); canvas.width=W; canvas.height=H;
+  const ctx = canvas.getContext('2d'); ctx.drawImage(baseImg,0,0,W,H);
+  const id = ctx.getImageData(0,0,W,H), data = id.data;
+  const [th,ts,tl] = hexToHsl(targetHex);
+  const SAT_MIN = 0.06;
+
+  // 대상 픽셀: 채도 있음 + 빨간 계열(입술) 아님
+  // 빨간 계열: hue < 0.08 또는 hue > 0.92
+  let sumL=0, cnt=0;
+  for(let i=0;i<data.length;i+=4){
+    if(data[i+3]<5) continue;
+    const [h,s,l] = rgbToHsl(data[i],data[i+1],data[i+2]);
+    const isRed = (h < 0.08 || h > 0.92);
+    if(s > SAT_MIN && !isRed){ sumL+=l; cnt++; }
+  }
+  const avgL = cnt>0 ? sumL/cnt : 0.5;
+
+  for(let i=0;i<data.length;i+=4){
+    if(data[i+3]<5) continue;
+    const [h,s,l] = rgbToHsl(data[i],data[i+1],data[i+2]);
+    const isRed = (h < 0.08 || h > 0.92);
+    if(s > SAT_MIN && !isRed){
+      const newL = Math.min(1,Math.max(0, tl+(l-avgL)));
+      const [nr,ng,nb] = hslToRgb(th,ts,newL);
+      data[i]=nr; data[i+1]=ng; data[i+2]=nb;
+    }
+  }
+  ctx.putImageData(id,0,0);
+  return canvas.toDataURL('image/png');
 }
 async function applyBottomColor(hex){
   colorState.bottom = hex;
   if(!outfit.bottom) return;
   const base = outfit.bottom._baseFile || outfit.bottom.file;
   showToast('하의색 바꾸는 중...');
-  const dataUrl = await selectiveRecolor(base, hex, 0.05);
+  const dataUrl = await selectiveRecolor(base, hex, 0.03); // satMin 낮춰서 치마류도 인식
   outfit.bottom = { ...outfit.bottom, file: dataUrl, _baseFile: base };
   renderDressup();
 }
@@ -769,10 +812,10 @@ function render() {
 
 function renderIntro() {
   root.innerHTML = `
-    <div class="top-emoji">🌴</div>
+    <div class="top-emoji">✝️</div>
     <h1>2026 Holy Mini me Maker</h1>
     <p class="sub">수련회 은혜 유형과 함께 나만의 HMM 미니미를 만들어봐</p>
-    <button class="start-btn" id="start">나만의 미니미 만들기👕</button>
+    <button class="start-btn" id="start">나만의 미니미 만들기 👕</button>
     <p class="footer-note">소요시간 약 2분</p>
   `;
   document.getElementById('start').onclick = () => { screen = 'gender'; render(); };
@@ -908,26 +951,37 @@ function renderDressup() {
     });
   }
 
+  // 표정 탭: noColor 아닐 때만 눈동자 피커 표시
   if (activeCategory === 'face') {
-    insertColorPicker({
-      label: '눈동자',
-      presets: eyeColorPresets,
-      currentHex: colorState.eye,
-      onPreset: (hex) => applyEyeColor(hex),
-      onCustom:  (hex) => applyEyeColor(hex),
-      containerId: 'color-pickers',
-    });
+    const curFace = outfit.face;
+    const faceNoColor = curFace?.noColor || false;
+    if (!faceNoColor) {
+      insertColorPicker({
+        label: '눈동자',
+        presets: eyeColorPresets,
+        currentHex: colorState.eye,
+        onPreset: (hex) => applyEyeColor(hex),
+        onCustom:  (hex) => applyEyeColor(hex),
+        containerId: 'color-pickers',
+      });
+    }
   }
 
+  // 하의 탭: noColor 아닐 때만 색상 피커 표시 (치마2 satMin 낮춰 적용)
   if (activeCategory === 'bottom' && outfit.bottom) {
-    insertColorPicker({
-      label: '하의',
-      presets: bottomColorPresets,
-      currentHex: colorState.bottom,
-      onPreset: (hex) => applyBottomColor(hex),
-      onCustom:  (hex) => applyBottomColor(hex),
-      containerId: 'color-pickers',
-    });
+    const curBottom = outfit.bottom;
+    const bottomNoColor = curBottom?.noColor || (curBottom._baseFile ? false : curBottom.noColor);
+    const baseBottomDef = [...BOTTOM_GIRL, ...BOTTOM_BOY].find(b => b.file === (curBottom._baseFile || curBottom.file));
+    if (!baseBottomDef?.noColor) {
+      insertColorPicker({
+        label: '하의',
+        presets: bottomColorPresets,
+        currentHex: colorState.bottom,
+        onPreset: (hex) => applyBottomColor(hex),
+        onCustom:  (hex) => applyBottomColor(hex),
+        containerId: 'color-pickers',
+      });
+    }
   }
 
   document.getElementById('complete-btn').onclick = () => {
