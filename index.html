@@ -236,13 +236,13 @@ const TYPES = ['수박','복숭아','포도','레몬','참외','자두','멜론'
 // ===================== 에셋 정의 =====================
 const A = 'assets/'; // prefix
 
-// 뒷머리 (1,2,3,7: 바디 뒤에, 4,5,6: 바디 앞에)
+// 뒷머리 (1,2,3,7,4: 바디 뒤에 / 5,6: 상의보다도 더 뒤 — 별도 처리)
 const BACKHAIR = [
   { name:'뒷머리1', file:'backhair1_girl_.png', front:false },
   { name:'뒷머리2', file:'backhair2_girl.png',  front:false },
   { name:'뒷머리3', file:'backhair3_girl.png',  front:false },
   { name:'뒷머리7', file:'backhair7_girl.png',  front:false },
-  { name:'뒷머리4', file:'backhair4_girl.png',  front:true  },
+  { name:'뒷머리4', file:'backhair4_girl.png',  front:false },
   { name:'뒷머리5', file:'backhair5_girl.png',  front:true  },
   { name:'뒷머리6', file:'backhair6_girl.png',  front:true  },
 ];
@@ -256,15 +256,15 @@ const FRONTHAIR_GIRL = [
   { name:'앞머리5', file:'fronthair5_join.png' },
 ];
 
-// 남자 머리 + join 머리 (남자용)
+// 남자 머리 + join 머리 (남자용) — 이름 통일: 헤어1~7
 const HAIR_BOY = [
   { name:'헤어1', file:'hair1_boy.png' },
   { name:'헤어2', file:'hair2_boy.png' },
   { name:'헤어3', file:'hair3_boy.png' },
   { name:'헤어4', file:'hair4_boy.png' },
-  { name:'앞머리2', file:'fronthair2_join.png' },
-  { name:'앞머리3', file:'fronthair3_join.png' },
-  { name:'앞머리5', file:'fronthair5_join.png' },
+  { name:'헤어5', file:'fronthair2_join.png' },
+  { name:'헤어6', file:'fronthair3_join.png' },
+  { name:'헤어7', file:'fronthair5_join.png' },
 ];
 
 // 표정 (noColor: 색상 커스텀 없음, eyeOnly: 눈동자만 채도 높은 픽셀 중 특정 범위만)
@@ -316,12 +316,14 @@ const SHOES = [
 
 // 아이템 (그룹: 같은 그룹은 하나만 선택)
 // group: 'glasses'(item1/9/10), 'tube'(item4/5), 'hat'(item6/7/13), 'carry'(item2/8: 텀블러/기타 중 하나)
+// behindBody: 바디보다 뒤 레이어로 배치 (item3/4/5)
+// colorable: 색상 커스텀 가능 (item2/4/5)
 const ITEMS = [
   { name:'안경1',     file:'item1_join.png',  group:'glasses' },
-  { name:'텀블러',    file:'item2_join.png',  group:'carry'   },
-  { name:'성경책',    file:'item3_join.png',  group:null      },
-  { name:'튜브1',     file:'item4_join.png',  group:'tube'    },
-  { name:'튜브2',     file:'item5_join.png',  group:'tube'    },
+  { name:'텀블러',    file:'item2_join.png',  group:'carry',  colorable:true },
+  { name:'성경책',    file:'item3_join.png',  group:null,     behindBody:true },
+  { name:'튜브1',     file:'item4_join.png',  group:'tube',   behindBody:true, colorable:true },
+  { name:'튜브2',     file:'item5_join.png',  group:'tube',   behindBody:true, colorable:true },
   { name:'모자1',     file:'item6_join.png',  group:'hat'     },
   { name:'모자2',     file:'item7_join.png',  group:'hat'     },
   { name:'기타',      file:'item8_join.png',  group:'carry'   },
@@ -330,6 +332,18 @@ const ITEMS = [
   { name:'명찰',      file:'item11_join.png', group:null      },
   { name:'손수건1',   file:'item12_join.png', group:null      },
   { name:'손수건2',   file:'item13_join.png', group:'hat'     },
+];
+
+// 아이템 색상 프리셋 (튜브/텀블러용 — 다양한 컬러)
+const itemColorPresets = [
+  {name:'레드',   hex:'#e85a4a'},
+  {name:'오렌지', hex:'#f0a040'},
+  {name:'옐로우', hex:'#f0d840'},
+  {name:'그린',   hex:'#5ab06a'},
+  {name:'블루',   hex:'#4a8fc0'},
+  {name:'퍼플',   hex:'#9a6ac0'},
+  {name:'핑크',   hex:'#e87aa8'},
+  {name:'화이트', hex:'#e8e4dc'},
 ];
 
 // ===================== 색상 커스텀 =====================
@@ -411,6 +425,7 @@ async function selectiveRecolor(filePath, targetHex, satMin=0.06){
 
 // 색상 상태 (현재 선택된 hex)
 const colorState = { hair:'#a87752', eye:'#452f1e', bottom:'#1c1c1c' };
+const itemColorState = {}; // 아이템명별 현재 색상 (튜브1, 튜브2, 텀블러)
 
 // 색상 적용 함수
 async function applyHairColor(hex, label){
@@ -467,23 +482,20 @@ async function selectiveRecolorEyeOnly(filePath, targetHex){
   const id = ctx.getImageData(0,0,W,H), data = id.data;
   const [th,ts,tl] = hexToHsl(targetHex);
   const SAT_MIN = 0.06;
+  const LIGHT_MAX = 0.4; // 눈동자(어두운 갈색/검정)는 밝기가 낮고, 입술(밝은 코랄)은 밝기가 높음 → 밝기로 구분
 
-  // 대상 픽셀: 채도 있음 + 빨간 계열(입술) 아님
-  // 빨간 계열: hue < 0.08 또는 hue > 0.92
   let sumL=0, cnt=0;
   for(let i=0;i<data.length;i+=4){
     if(data[i+3]<5) continue;
-    const [h,s,l] = rgbToHsl(data[i],data[i+1],data[i+2]);
-    const isRed = (h < 0.08 || h > 0.92);
-    if(s > SAT_MIN && !isRed){ sumL+=l; cnt++; }
+    const [,s,l] = rgbToHsl(data[i],data[i+1],data[i+2]);
+    if(s > SAT_MIN && l < LIGHT_MAX){ sumL+=l; cnt++; }
   }
-  const avgL = cnt>0 ? sumL/cnt : 0.5;
+  const avgL = cnt>0 ? sumL/cnt : 0.2;
 
   for(let i=0;i<data.length;i+=4){
     if(data[i+3]<5) continue;
-    const [h,s,l] = rgbToHsl(data[i],data[i+1],data[i+2]);
-    const isRed = (h < 0.08 || h > 0.92);
-    if(s > SAT_MIN && !isRed){
+    const [,s,l] = rgbToHsl(data[i],data[i+1],data[i+2]);
+    if(s > SAT_MIN && l < LIGHT_MAX){
       const newL = Math.min(1,Math.max(0, tl+(l-avgL)));
       const [nr,ng,nb] = hslToRgb(th,ts,newL);
       data[i]=nr; data[i+1]=ng; data[i+2]=nb;
@@ -502,23 +514,39 @@ async function applyBottomColor(hex){
   renderDressup();
 }
 
+// 아이템 색상 (튜브1/2, 텀블러) — 다중선택 배열 안의 특정 아이템 색만 변경
+async function applyItemColor(itemName, hex){
+  const idx = outfit.items.findIndex(i => i.name === itemName || (i._baseName && i._baseName === itemName));
+  if (idx === -1) return;
+  const target = outfit.items[idx];
+  const base = target._baseFile || target.file;
+  const baseName = target._baseName || target.name;
+  showToast('색깔 바꾸는 중...');
+  const dataUrl = await selectiveRecolor(base, hex, 0.05);
+  outfit.items[idx] = { ...target, file: dataUrl, _baseFile: base, _baseName: baseName, name: baseName };
+  itemColorState[baseName] = hex;
+  renderDressup();
+}
+
 // 색상 피커 UI 삽입 함수
+let _colorPickerUid = 0;
 function insertColorPicker({ label, presets, currentHex, onPreset, onCustom, containerId }){
   const wrap = document.getElementById(containerId);
   if(!wrap) return;
+  const uid = `${containerId}-${_colorPickerUid++}`;
   const div = document.createElement('div');
   div.className = 'color-picker-wrap';
   div.innerHTML = `
     <p class="color-picker-label">🎨 ${label} 색 바꾸기</p>
-    <div class="color-swatch-row" id="swatches-${containerId}"></div>
+    <div class="color-swatch-row" id="swatches-${uid}"></div>
     <label class="color-custom-row">
       <span>커스텀 색상</span>
-      <input type="color" id="custom-${containerId}" value="${currentHex}">
+      <input type="color" id="custom-${uid}" value="${currentHex}">
     </label>
   `;
   wrap.appendChild(div);
 
-  const row = div.querySelector(`#swatches-${containerId}`);
+  const row = div.querySelector(`#swatches-${uid}`);
   presets.forEach(p => {
     const sw = document.createElement('button');
     sw.className = 'color-swatch' + (p.hex === currentHex ? ' swatch-active' : '');
@@ -527,13 +555,13 @@ function insertColorPicker({ label, presets, currentHex, onPreset, onCustom, con
     sw.onclick = () => {
       div.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('swatch-active'));
       sw.classList.add('swatch-active');
-      div.querySelector(`#custom-${containerId}`).value = p.hex;
+      div.querySelector(`#custom-${uid}`).value = p.hex;
       onPreset(p.hex, p.name);
     };
     row.appendChild(sw);
   });
 
-  div.querySelector(`#custom-${containerId}`).addEventListener('change', e => {
+  div.querySelector(`#custom-${uid}`).addEventListener('change', e => {
     div.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('swatch-active'));
     onCustom(e.target.value);
   });
@@ -656,26 +684,57 @@ async function buildCompositeImage() {
   if (r) await draw(r.bg);
 
   if (selectedGender === 'male') {
-    // 남자: 배경 > 바디 > 헤어 > 표정 > 신발 > 하의 > 상의 > 아이템
+    // 남자: 배경 > (바디뒤 아이템) > 바디 > 헤어 > 표정 > 신발 > 하의 > 상의 > (나머지 아이템)
+    const behindItems = outfit.items.filter(it => it.behindBody);
+    const frontItems  = outfit.items.filter(it => !it.behindBody);
+    for (const it of behindItems) await draw(it.file);
     await draw('body_boy.png');
     await draw(outfit.hair?.file);
     await draw(outfit.face?.file || 'face1_boy.png');
     await draw(outfit.shoes?.file);
     await draw(outfit.bottom?.file);
     await draw(outfit.top?.file);
-    for (const it of outfit.items) await draw(it.file);
+    for (const it of frontItems) await draw(it.file);
   } else {
-    // 여자: 뒷머리1~3 → 바디 → 앞머리 → 표정 → 신발 → 하의 → 상의 → (뒷머리4~6) → 아이템
     const bh = outfit.backhair;
-    if (bh && !bh.front) await draw(bh.file);
-    await draw('body_girl.png');
-    await draw(outfit.fronthair?.file);
-    await draw(outfit.face?.file || 'face1_girl.png');
-    await draw(outfit.shoes?.file);
-    await draw(outfit.bottom?.file);
-    await draw(outfit.top?.file);
-    if (bh && bh.front) await draw(bh.file);
-    for (const it of outfit.items) await draw(it.file);
+    const isBackGroup = bh && !bh.front;   // 1,2,3,4,7
+    const isFrontGroup = bh && bh.front;   // 5,6
+    const behindItems = outfit.items.filter(it => it.behindBody);
+    const frontItems  = outfit.items.filter(it => !it.behindBody);
+
+    if (isBackGroup) {
+      // 배경 > 백헤어 > (바디뒤 아이템) > 바디 > 앞머리 > 표정 > 신발 > 하의 > 상의 > 아이템
+      await draw(bh.file);
+      for (const it of behindItems) await draw(it.file);
+      await draw('body_girl.png');
+      await draw(outfit.fronthair?.file);
+      await draw(outfit.face?.file || 'face1_girl.png');
+      await draw(outfit.shoes?.file);
+      await draw(outfit.bottom?.file);
+      await draw(outfit.top?.file);
+      for (const it of frontItems) await draw(it.file);
+    } else if (isFrontGroup) {
+      // 배경 > (바디뒤 아이템) > 바디 > 신발 > 하의 > 상의 > 백헤어 > 앞머리 > 표정 > 아이템
+      for (const it of behindItems) await draw(it.file);
+      await draw('body_girl.png');
+      await draw(outfit.shoes?.file);
+      await draw(outfit.bottom?.file);
+      await draw(outfit.top?.file);
+      await draw(bh.file);
+      await draw(outfit.fronthair?.file);
+      await draw(outfit.face?.file || 'face1_girl.png');
+      for (const it of frontItems) await draw(it.file);
+    } else {
+      // 뒷머리 미선택
+      for (const it of behindItems) await draw(it.file);
+      await draw('body_girl.png');
+      await draw(outfit.fronthair?.file);
+      await draw(outfit.face?.file || 'face1_girl.png');
+      await draw(outfit.shoes?.file);
+      await draw(outfit.bottom?.file);
+      await draw(outfit.top?.file);
+      for (const it of frontItems) await draw(it.file);
+    }
   }
 
   // 텍스트 오버레이
@@ -745,18 +804,54 @@ function stageHTML(bgFile) {
     if (outfit.shoes)    layers.push(`<img class="stage-full" src="${src(outfit.shoes.file)}" style="z-index:4;" alt="shoes">`);
     if (outfit.bottom)   layers.push(`<img class="stage-full" src="${src(outfit.bottom.file)}" style="z-index:5;" alt="bottom">`);
     if (outfit.top)      layers.push(`<img class="stage-full" src="${src(outfit.top.file)}" style="z-index:6;" alt="top">`);
-    outfit.items.forEach(it => layers.push(`<img class="stage-full" src="${src(it.file)}" style="z-index:7;" alt="${it.name}">`));
+    outfit.items.forEach(it => {
+      const z = it.behindBody ? 1.5 : 7;
+      layers.push(`<img class="stage-full" src="${src(it.file)}" style="z-index:${z};" alt="${it.name}">`);
+    });
   } else {
     const bh = outfit.backhair;
-    if (bh && !bh.front) layers.push(`<img class="stage-full" src="${src(bh.file)}" style="z-index:1;" alt="backhair">`);
-    layers.push(`<img class="stage-full" src="${A}body_girl.png" style="z-index:2;" alt="body">`);
-    if (outfit.fronthair) layers.push(`<img class="stage-full" src="${src(outfit.fronthair.file)}" style="z-index:3;" alt="fronthair">`);
-    layers.push(`<img class="stage-full" src="${src(outfit.face?.file || 'face1_girl.png')}" style="z-index:4;" alt="face">`);
-    if (outfit.shoes)    layers.push(`<img class="stage-full" src="${src(outfit.shoes.file)}" style="z-index:5;" alt="shoes">`);
-    if (outfit.bottom)   layers.push(`<img class="stage-full" src="${src(outfit.bottom.file)}" style="z-index:6;" alt="bottom">`);
-    if (outfit.top)      layers.push(`<img class="stage-full" src="${src(outfit.top.file)}" style="z-index:7;" alt="top">`);
-    if (bh && bh.front)  layers.push(`<img class="stage-full" src="${src(bh.file)}" style="z-index:8;" alt="backhair-front">`);
-    outfit.items.forEach(it => layers.push(`<img class="stage-full" src="${src(it.file)}" style="z-index:9;" alt="${it.name}">`));
+    const isBackGroup = bh && !bh.front; // 1,2,3,4,7
+    const isFrontGroup = bh && bh.front; // 5,6
+
+    if (isBackGroup) {
+      // 배경 > 백헤어 > 바디 > 앞머리 > 표정 > 신발 > 하의 > 상의 > 아이템
+      layers.push(`<img class="stage-full" src="${src(bh.file)}" style="z-index:1;" alt="backhair">`);
+      layers.push(`<img class="stage-full" src="${A}body_girl.png" style="z-index:2;" alt="body">`);
+      if (outfit.fronthair) layers.push(`<img class="stage-full" src="${src(outfit.fronthair.file)}" style="z-index:3;" alt="fronthair">`);
+      layers.push(`<img class="stage-full" src="${src(outfit.face?.file || 'face1_girl.png')}" style="z-index:4;" alt="face">`);
+      if (outfit.shoes)  layers.push(`<img class="stage-full" src="${src(outfit.shoes.file)}" style="z-index:5;" alt="shoes">`);
+      if (outfit.bottom) layers.push(`<img class="stage-full" src="${src(outfit.bottom.file)}" style="z-index:6;" alt="bottom">`);
+      if (outfit.top)    layers.push(`<img class="stage-full" src="${src(outfit.top.file)}" style="z-index:7;" alt="top">`);
+      outfit.items.forEach(it => {
+        const z = it.behindBody ? 1.5 : 8;
+        layers.push(`<img class="stage-full" src="${src(it.file)}" style="z-index:${z};" alt="${it.name}">`);
+      });
+    } else if (isFrontGroup) {
+      // 배경 > 바디 > 신발 > 하의 > 상의 > 백헤어 > 앞머리 > 표정 > 아이템
+      layers.push(`<img class="stage-full" src="${A}body_girl.png" style="z-index:1;" alt="body">`);
+      if (outfit.shoes)  layers.push(`<img class="stage-full" src="${src(outfit.shoes.file)}" style="z-index:2;" alt="shoes">`);
+      if (outfit.bottom) layers.push(`<img class="stage-full" src="${src(outfit.bottom.file)}" style="z-index:3;" alt="bottom">`);
+      if (outfit.top)    layers.push(`<img class="stage-full" src="${src(outfit.top.file)}" style="z-index:4;" alt="top">`);
+      layers.push(`<img class="stage-full" src="${src(bh.file)}" style="z-index:5;" alt="backhair">`);
+      if (outfit.fronthair) layers.push(`<img class="stage-full" src="${src(outfit.fronthair.file)}" style="z-index:6;" alt="fronthair">`);
+      layers.push(`<img class="stage-full" src="${src(outfit.face?.file || 'face1_girl.png')}" style="z-index:7;" alt="face">`);
+      outfit.items.forEach(it => {
+        const z = it.behindBody ? 1.5 : 8;
+        layers.push(`<img class="stage-full" src="${src(it.file)}" style="z-index:${z};" alt="${it.name}">`);
+      });
+    } else {
+      // 뒷머리 미선택: 기본 순서
+      layers.push(`<img class="stage-full" src="${A}body_girl.png" style="z-index:1;" alt="body">`);
+      if (outfit.fronthair) layers.push(`<img class="stage-full" src="${src(outfit.fronthair.file)}" style="z-index:2;" alt="fronthair">`);
+      layers.push(`<img class="stage-full" src="${src(outfit.face?.file || 'face1_girl.png')}" style="z-index:3;" alt="face">`);
+      if (outfit.shoes)  layers.push(`<img class="stage-full" src="${src(outfit.shoes.file)}" style="z-index:4;" alt="shoes">`);
+      if (outfit.bottom) layers.push(`<img class="stage-full" src="${src(outfit.bottom.file)}" style="z-index:5;" alt="bottom">`);
+      if (outfit.top)    layers.push(`<img class="stage-full" src="${src(outfit.top.file)}" style="z-index:6;" alt="top">`);
+      outfit.items.forEach(it => {
+        const z = it.behindBody ? 0.5 : 7;
+        layers.push(`<img class="stage-full" src="${src(it.file)}" style="z-index:${z};" alt="${it.name}">`);
+      });
+    }
   }
 
   return `<div class="dressup-stage">${layers.join('')}</div>`;
@@ -905,9 +1000,9 @@ function renderDressup() {
           outfit.items = outfit.items.filter(i => i.name !== item.name);
         } else if (item.group) {
           outfit.items = outfit.items.filter(i => i.group !== item.group);
-          outfit.items.push(item);
+          outfit.items.push({ ...item });
         } else {
-          outfit.items.push(item);
+          outfit.items.push({ ...item });
         }
         renderDressup();
       };
@@ -931,6 +1026,7 @@ function renderDressup() {
 
   // 색상 피커 삽입 (탭에 따라)
   const cpWrap = document.getElementById('color-pickers');
+  _colorPickerUid = 0;
   const hairKey = isMale ? 'hair' : 'backhair';
 
   if ((activeCategory === 'backhair' || activeCategory === 'hair') && outfit[hairKey]) {
@@ -986,6 +1082,24 @@ function renderDressup() {
         containerId: 'color-pickers',
       });
     }
+  }
+
+  // 아이템 탭: 색상 커스텀 가능한(colorable) 선택된 아이템마다 피커 표시
+  if (activeCategory === 'items') {
+    outfit.items.forEach(it => {
+      const baseDef = ITEMS.find(d => d.file === (it._baseFile || it.file));
+      if (baseDef?.colorable) {
+        const baseName = it._baseName || it.name;
+        insertColorPicker({
+          label: baseName,
+          presets: itemColorPresets,
+          currentHex: itemColorState[baseName] || itemColorPresets[0].hex,
+          onPreset: (hex) => applyItemColor(baseName, hex),
+          onCustom:  (hex) => applyItemColor(baseName, hex),
+          containerId: 'color-pickers',
+        });
+      }
+    });
   }
 
   document.getElementById('complete-btn').onclick = () => {
