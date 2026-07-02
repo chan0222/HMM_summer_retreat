@@ -280,20 +280,31 @@ const FACE_BOY = [
 ];
 
 // 상의
+// 상의 (겉옷 제외 — 겉옷은 별도 outer 슬롯)
 const TOP_GIRL = [
-  { name:'메인티1',  file:'main_top1_girl.png' },
-  { name:'메인티2',  file:'main_top2_girl.png' },
-  { name:'서브티1',  file:'sub_top1_girl.png'  },
-  { name:'서브티2',  file:'sub_top2_girl.png'  },
-  { name:'j333티1',  file:'j3_top1_girl.png'   },
-  { name:'j333티2',  file:'j3_top2_girl.png'   },
-  { name:'겉옷',     file:'outer_top_girl.png', group:'outer' },
+  { name:'메인티1', file:'main_top1_girl.png' },
+  { name:'메인티2', file:'main_top2_girl.png' },
+  { name:'서브티1', file:'sub_top1_girl.png'  },
+  { name:'서브티2', file:'sub_top2_girl.png'  },
+  { name:'j333티1', file:'j3_top1_girl.png'   },
+  { name:'j333티2', file:'j3_top2_girl.png'   },
 ];
 const TOP_BOY = [
-  { name:'메인티',   file:'main_top1_boy.png' },
-  { name:'서브티',   file:'sub_top1_boy.png'  },
-  { name:'j333티',   file:'j3_top1_boy.png'   },
-  { name:'겉옷',     file:'outer_top_boy.png', group:'outer' },
+  { name:'메인티1', file:'main_top1_boy.png' },
+  { name:'메인티2', file:'main_top2_boy.png' },
+  { name:'서브티1', file:'sub_top1_boy.png'  },
+  { name:'서브티2', file:'sub_top2_boy.png'  },
+  { name:'j333티1', file:'j3_top1_boy.png'   },
+  { name:'j333티2', file:'j3_top2_boy.png'   },
+];
+// 겉옷 (남녀 공용 + 여자전용, 상의와 별도 슬롯으로 동시 착용 가능)
+const OUTER_TOP = [
+  { name:'겉옷1', file:'outer_top_girl.png' }, // 여자
+  { name:'겉옷2', file:'outer_top2_join.png' }, // 공용
+];
+const OUTER_TOP_BOY = [
+  { name:'겉옷',  file:'outer_top_boy.png'   }, // 남자
+  { name:'겉옷2', file:'outer_top2_join.png' }, // 공용
 ];
 
 // 하의 (noColor: 색상 커스텀 제외)
@@ -301,14 +312,18 @@ const BOTTOM_GIRL = [
   { name:'카고바지', file:'bottom1_girl.png' },
   { name:'바지2',    file:'bottom2_join.png'  },
   { name:'몸빼바지', file:'bottom3_join.png', noColor:true },
+  { name:'반바지',   file:'bottom4_join.png'  },
+  { name:'청반바지', file:'bottom5_join.png'  },
   { name:'치마1',    file:'bottom2_girl.png'  },
   { name:'치마2',    file:'bottom3_girl.png'  },
   { name:'하의5',    file:'bottom4_girl.png'  },
 ];
 const BOTTOM_BOY = [
-  { name:'카고바지', file:'bottom1_boy.png' },
+  { name:'카고바지', file:'bottom1_boy.png'  },
   { name:'바지2',    file:'bottom2_join.png' },
   { name:'몸빼바지', file:'bottom3_join.png', noColor:true },
+  { name:'반바지',   file:'bottom4_join.png' },
+  { name:'청반바지', file:'bottom5_join.png' },
 ];
 
 // 신발 (신발 탭에서 선택)
@@ -326,28 +341,27 @@ const SOCKS_ONLY = [
 const SHOES = [...SHOES_ONLY, ...SOCKS_ONLY]; // 하위 호환
 
 // 아이템
-// group: 'glasses'(1/9/10/15), 'tube'(4/5), 'hat'(6/7/13), 'carry'(2/8), 'outer'(17↔outer_top)
-// behindBody: 바디보다 뒤 레이어 (3/4/5) — 단, 성경책은 뒷머리보다는 앞
+// group: 'glasses'(1/9/10/15), 'tube'(4/5), 'hat'(6/7/13), 'hand'(2/8/18: 텀블러/기타/물총 중 하나)
+// behindBody: 바디보다 뒤 레이어 (4/5) — frontOfHair: 뒷머리보다 앞 + 바디보다 뒤 (3)
 // colorable: 색상 커스텀 가능 (2/4/5)
 const ITEMS = [
-  { name:'안경1',     file:'item1_join.png',  group:'glasses' },
-  { name:'텀블러',    file:'item2_join.png',  group:'carry',   colorable:true },
-  { name:'성경책',    file:'item3_join.png',  group:null,      behindBody:true, frontOfHair:true },
-  { name:'튜브1',     file:'item4_join.png',  group:'tube',    behindBody:true, colorable:true },
-  { name:'튜브2',     file:'item5_join.png',  group:'tube',    behindBody:true, colorable:true },
-  { name:'모자1',     file:'item6_join.png',  group:'hat'      },
-  { name:'모자2',     file:'item7_join.png',  group:'hat'      },
-  { name:'기타',      file:'item8_join.png',  group:'carry'    },
-  { name:'썬글라스',  file:'item9_join.png',  group:'glasses'  },
-  { name:'안경2',     file:'item10_join.png', group:'glasses'  },
-  { name:'명찰',      file:'item11_join.png', group:null       },
-  { name:'손수건1',   file:'item12_join.png', group:null       },
-  { name:'손수건2',   file:'item13_join.png', group:'hat'      },
-  { name:'헤드폰',    file:'item14_join.png', group:null       },
-  { name:'안경3',     file:'item15_join.png', group:'glasses'  },
-  { name:'불꽃',      file:'item16_join.png', group:null       },
-  { name:'허리리본',  file:'item17_join.png', group:'outer'    },
-  { name:'물총',      file:'item18_join.png', group:null       },
+  { name:'안경1',    file:'item1_join.png',  group:'glasses' },
+  { name:'텀블러',   file:'item2_join.png',  group:'hand',   colorable:true },
+  { name:'성경책',   file:'item3_join.png',  group:null,     behindBody:true, frontOfHair:true },
+  { name:'튜브1',    file:'item4_join.png',  group:'tube',   behindBody:true, colorable:true },
+  { name:'튜브2',    file:'item5_join.png',  group:'tube',   behindBody:true, colorable:true },
+  { name:'모자1',    file:'item6_join.png',  group:'hat'     },
+  { name:'모자2',    file:'item7_join.png',  group:'hat'     },
+  { name:'기타',     file:'item8_join.png',  group:'hand'    },
+  { name:'썬글라스', file:'item9_join.png',  group:'glasses' },
+  { name:'안경2',    file:'item10_join.png', group:'glasses' },
+  { name:'명찰',     file:'item11_join.png', group:null      },
+  { name:'손수건1',  file:'item12_join.png', group:null      },
+  { name:'손수건2',  file:'item13_join.png', group:'hat'     },
+  { name:'헤드폰',   file:'item14_join.png', group:null      },
+  { name:'안경3',    file:'item15_join.png', group:'glasses' },
+  { name:'불꽃',     file:'item16_join.png', group:null      },
+  { name:'물총',     file:'item18_join.png', group:'hand'    },
 ];
 
 // 아이템 색상 프리셋 (튜브/텀블러용 — 다양한 컬러)
@@ -595,15 +609,16 @@ let resultType = null;
 
 // 코디 상태
 let outfit = {
-  backhair: null,   // { name, file, front }
-  fronthair: null,  // { name, file }  (여자만)
-  hair: null,       // (남자만)
-  face: null,       // { name, file }
+  backhair: null,
+  fronthair: null,
+  hair: null,
+  face: null,
   top: null,
+  outer: null,      // 겉옷 (상의와 별도 슬롯, 동시 착용 가능)
   bottom: null,
   shoes: null,
-  socks: null,      // 양말 (신발 탭에서 선택, 신발 레이어 아래)
-  items: [],        // 다중 선택
+  socks: null,
+  items: [],
 };
 let activeCategory = 'backhair';
 
@@ -714,6 +729,7 @@ async function buildCompositeImage() {
     await draw(outfit.shoes?.file);
     await draw(outfit.bottom?.file);
     await draw(outfit.top?.file);
+    await draw(outfit.outer?.file);
     for (const it of frontItems) await draw(it.file);
   } else {
     const bh = outfit.backhair;
@@ -731,6 +747,7 @@ async function buildCompositeImage() {
       await draw(outfit.shoes?.file);
       await draw(outfit.bottom?.file);
       await draw(outfit.top?.file);
+    await draw(outfit.outer?.file);
       for (const it of frontItems) await draw(it.file);
     } else if (isFrontGroup) {
       for (const it of behindBodyItems)  await draw(it.file);
@@ -740,6 +757,7 @@ async function buildCompositeImage() {
       await draw(outfit.shoes?.file);
       await draw(outfit.bottom?.file);
       await draw(outfit.top?.file);
+    await draw(outfit.outer?.file);
       await draw(bh.file);
       await draw(outfit.fronthair?.file);
       await draw(outfit.face?.file || 'face1_girl.png');
@@ -754,6 +772,7 @@ async function buildCompositeImage() {
       await draw(outfit.shoes?.file);
       await draw(outfit.bottom?.file);
       await draw(outfit.top?.file);
+    await draw(outfit.outer?.file);
       for (const it of frontItems) await draw(it.file);
     }
   }
@@ -832,6 +851,7 @@ function stageHTML(bgFile) {
     if (outfit.shoes) layers.push(`<img class="stage-full" src="${src(outfit.shoes.file)}" style="z-index:6;" alt="shoes">`);
     if (outfit.bottom) layers.push(`<img class="stage-full" src="${src(outfit.bottom.file)}" style="z-index:7;" alt="bottom">`);
     if (outfit.top)    layers.push(`<img class="stage-full" src="${src(outfit.top.file)}" style="z-index:8;" alt="top">`);
+      if (outfit.outer)    layers.push(`<img class="stage-full" src="${src(outfit.outer.file)}" style="z-index:8.5;" alt="outer">`);
     frontItems.forEach(it => layers.push(`<img class="stage-full" src="${src(it.file)}" style="z-index:9;" alt="${it.name}">`));
   } else {
     const bh = outfit.backhair;
@@ -850,6 +870,7 @@ function stageHTML(bgFile) {
       if (outfit.shoes)  layers.push(`<img class="stage-full" src="${src(outfit.shoes.file)}" style="z-index:6;" alt="shoes">`);
       if (outfit.bottom) layers.push(`<img class="stage-full" src="${src(outfit.bottom.file)}" style="z-index:7;" alt="bottom">`);
       if (outfit.top)    layers.push(`<img class="stage-full" src="${src(outfit.top.file)}" style="z-index:8;" alt="top">`);
+      if (outfit.outer)    layers.push(`<img class="stage-full" src="${src(outfit.outer.file)}" style="z-index:8.5;" alt="outer">`);
       frontItems.forEach(it => layers.push(`<img class="stage-full" src="${src(it.file)}" style="z-index:9;" alt="${it.name}">`));
     } else if (isFrontGroup) {
       // 배경 > 바디뒤아이템 > 성경책 > 바디 > 양말 > 신발 > 하의 > 상의 > 백헤어 > 앞머리 > 표정 > 아이템
@@ -860,6 +881,7 @@ function stageHTML(bgFile) {
       if (outfit.shoes)  layers.push(`<img class="stage-full" src="${src(outfit.shoes.file)}" style="z-index:3;" alt="shoes">`);
       if (outfit.bottom) layers.push(`<img class="stage-full" src="${src(outfit.bottom.file)}" style="z-index:4;" alt="bottom">`);
       if (outfit.top)    layers.push(`<img class="stage-full" src="${src(outfit.top.file)}" style="z-index:5;" alt="top">`);
+      if (outfit.outer)    layers.push(`<img class="stage-full" src="${src(outfit.outer.file)}" style="z-index:5.5;" alt="outer">`);
       layers.push(`<img class="stage-full" src="${src(bh.file)}" style="z-index:6;" alt="backhair">`);
       if (outfit.fronthair) layers.push(`<img class="stage-full" src="${src(outfit.fronthair.file)}" style="z-index:7;" alt="fronthair">`);
       layers.push(`<img class="stage-full" src="${src(outfit.face?.file || 'face1_girl.png')}" style="z-index:8;" alt="face">`);
@@ -875,6 +897,7 @@ function stageHTML(bgFile) {
       if (outfit.shoes)  layers.push(`<img class="stage-full" src="${src(outfit.shoes.file)}" style="z-index:5;" alt="shoes">`);
       if (outfit.bottom) layers.push(`<img class="stage-full" src="${src(outfit.bottom.file)}" style="z-index:6;" alt="bottom">`);
       if (outfit.top)    layers.push(`<img class="stage-full" src="${src(outfit.top.file)}" style="z-index:7;" alt="top">`);
+      if (outfit.outer)    layers.push(`<img class="stage-full" src="${src(outfit.outer.file)}" style="z-index:7.5;" alt="outer">`);
       frontItems.forEach(it => layers.push(`<img class="stage-full" src="${src(it.file)}" style="z-index:8;" alt="${it.name}">`));
     }
   }
@@ -885,11 +908,12 @@ function stageHTML(bgFile) {
 // ===================== 카테고리 정의 =====================
 function getCategories() {
   if (selectedGender === 'male') return [
-    { key:'hair',   label:'머리', icon:'💇' },
-    { key:'face',   label:'표정', icon:'🙂' },
-    { key:'top',    label:'상의', icon:'👕' },
-    { key:'bottom', label:'하의', icon:'👖' },
-    { key:'shoes',  label:'신발', icon:'👟' },
+    { key:'hair',   label:'머리',  icon:'💇' },
+    { key:'face',   label:'표정',  icon:'🙂' },
+    { key:'top',    label:'상의',  icon:'👕' },
+    { key:'outer',  label:'겉옷',  icon:'🧥' },
+    { key:'bottom', label:'하의',  icon:'👖' },
+    { key:'shoes',  label:'신발',  icon:'👟' },
     { key:'items',  label:'아이템', icon:'🎒' },
   ];
   return [
@@ -897,6 +921,7 @@ function getCategories() {
     { key:'fronthair', label:'앞머리', icon:'✂️' },
     { key:'face',      label:'표정',   icon:'🙂' },
     { key:'top',       label:'상의',   icon:'👕' },
+    { key:'outer',     label:'겉옷',   icon:'🧥' },
     { key:'bottom',    label:'하의',   icon:'👖' },
     { key:'shoes',     label:'신발',   icon:'👟' },
     { key:'items',     label:'아이템', icon:'🎒' },
@@ -908,16 +933,16 @@ function getItemList() {
     if (activeCategory === 'hair')    return HAIR_BOY;
     if (activeCategory === 'face')    return FACE_BOY;
     if (activeCategory === 'top')     return TOP_BOY;
+    if (activeCategory === 'outer')   return OUTER_TOP_BOY;
     if (activeCategory === 'bottom')  return BOTTOM_BOY;
-    if (activeCategory === 'shoes')   return SHOES;
     if (activeCategory === 'items')   return ITEMS;
   } else {
     if (activeCategory === 'backhair')  return BACKHAIR;
     if (activeCategory === 'fronthair') return FRONTHAIR_GIRL;
     if (activeCategory === 'face')      return FACE_GIRL;
     if (activeCategory === 'top')       return TOP_GIRL;
+    if (activeCategory === 'outer')     return OUTER_TOP;
     if (activeCategory === 'bottom')    return BOTTOM_GIRL;
-    if (activeCategory === 'shoes')     return SHOES;
     if (activeCategory === 'items')     return ITEMS;
   }
   return [];
@@ -957,13 +982,13 @@ function renderGender() {
   `;
   document.getElementById('g-male').onclick = () => {
     selectedGender = 'male';
-    outfit = { hair:null, face:null, top:null, bottom:null, shoes:null, socks:null, items:[] };
+    outfit = { hair:null, face:null, top:null, outer:null, bottom:null, shoes:null, socks:null, items:[] };
     activeCategory = 'hair';
     screen = 'dressup'; render();
   };
   document.getElementById('g-female').onclick = () => {
     selectedGender = 'female';
-    outfit = { backhair:null, fronthair:null, face:null, top:null, bottom:null, shoes:null, socks:null, items:[] };
+    outfit = { backhair:null, fronthair:null, face:null, top:null, outer:null, bottom:null, shoes:null, socks:null, items:[] };
     activeCategory = 'backhair';
     screen = 'dressup'; render();
   };
@@ -1051,10 +1076,6 @@ function renderDressup() {
       ib.innerHTML = `<img src="${src(item.file)}" alt="${item.name}"><span>${item.name}</span>`;
       ib.onclick = () => {
         outfit[key] = { ...item };
-        // 상의에서 겉옷 선택 시 item17(허리리본) 제거
-        if (key === 'top' && item.group === 'outer') {
-          outfit.items = outfit.items.filter(i => i.group !== 'outer');
-        }
         renderDressup();
       };
       itemsWrap.appendChild(ib);
@@ -1077,10 +1098,6 @@ function renderDressup() {
         } else if (item.group) {
           outfit.items = outfit.items.filter(i => i.group !== item.group);
           outfit.items.push({ ...item });
-          // item17(허리리본, group:'outer') 선택 시 상의 겉옷 제거
-          if (item.group === 'outer') {
-            if (outfit.top?.group === 'outer') outfit.top = null;
-          }
         } else {
           outfit.items.push({ ...item });
         }
@@ -1265,7 +1282,7 @@ function renderResult() {
     screen = 'intro'; current = 0; selectedGender = null; resultType = null;
     TYPES.forEach(t => scores[t] = 0);
     answers.fill(null);
-    outfit = { backhair:null, fronthair:null, hair:null, face:null, top:null, bottom:null, shoes:null, socks:null, items:[] };
+    outfit = { backhair:null, fronthair:null, hair:null, face:null, top:null, outer:null, bottom:null, shoes:null, socks:null, items:[] };
     render();
   };
 }
